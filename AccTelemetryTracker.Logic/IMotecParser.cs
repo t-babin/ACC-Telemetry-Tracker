@@ -1,4 +1,4 @@
-﻿namespace AccMotec.Logic;
+﻿namespace AccTelemetryTracker.Logic;
 public interface IMotecParser
 {
     /// <summary>

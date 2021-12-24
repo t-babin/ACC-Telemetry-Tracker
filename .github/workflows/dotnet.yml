@@ -22,4 +22,4 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
     - name: Test
-      run: dotnet test --no-build --verbosity normal AccMotec.Tests/AccMotec.Tests.csproj
+      run: dotnet test --no-build --verbosity normal AccTelemetryTracker.Tests/AccTelemetryTracker.Tests.csproj

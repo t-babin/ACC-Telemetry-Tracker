@@ -4,23 +4,23 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Schema;
 
-namespace AccMotec.Logic
+namespace AccTelemetryTracker.Logic;
+public class MotecParser : IMotecParser
 {
-    public class MotecParser : IMotecParser
-    {
-        // TODO logging
-        public MotecParser()
-        { }
+    // TODO logging
+    public MotecParser()
+    { }
 
-        // TODO get the rest of the cars
-        private readonly string[] _validCars = new []
-        {
+    // TODO get the rest of the cars
+    private readonly string[] _validCars = new[]
+    {
             "R8 LMS EVO",
-            "991ii GT3 R EVO"
+            "991ii GT3 R EVO",
+            "488 GT3 Evo"
         };
 
-        private readonly string[] _validTracks = new []
-        {
+    private readonly string[] _validTracks = new[]
+    {
             "barcelona",
             "brands_hatch",
             "donington",
@@ -42,39 +42,40 @@ namespace AccMotec.Logic
             "zolder"
         };
 
-        /// <inheritdoc />
-        public bool IsValidLdx(string? path)
+    /// <inheritdoc />
+    public bool IsValidLdx(string? path)
+    {
+        var isValid = true;
+        ValidatePath(path, ".ldx");
+
+        var settings = new XmlReaderSettings();
+        settings.Schemas.Add(string.Empty, "MotecLdx.xsd");
+        settings.ValidationType = ValidationType.Schema;
+        var validationHandler = new ValidationEventHandler(ValidateXsd);
+
+        using var reader = XmlReader.Create(path!, settings);
+        var document = new XmlDocument();
+        try
         {
-            var isValid = true;
-            ValidatePath(path, ".ldx");
-
-            var settings = new XmlReaderSettings();
-            settings.Schemas.Add(string.Empty, "MotecLdx.xsd");
-            settings.ValidationType = ValidationType.Schema;
-            var validationHandler = new ValidationEventHandler(ValidateXsd);
-
-            var reader = XmlReader.Create(path!, settings);
-            var document = new XmlDocument();
-            try
-            {
-                document.Load(reader);
-                document.Validate(validationHandler);
-            }
-            catch (XmlSchemaValidationException ex)
-            {
-                isValid = false;
-                Console.WriteLine(ex.Message);
-            }
-
-            return isValid;
+            document.Load(reader);
+            document.Validate(validationHandler);
+        }
+        catch (XmlSchemaValidationException ex)
+        {
+            isValid = false;
+            Console.WriteLine(ex.Message);
         }
 
-        /// <inheritdoc />
-        public IEnumerable<MotecLap> ParseLaps(string? path)
-        {
-            ValidatePath(path, ".ldx");
+        return isValid;
+    }
 
-            using var reader = File.OpenText(path!);
+    /// <inheritdoc />
+    public IEnumerable<MotecLap> ParseLaps(string? path)
+    {
+        ValidatePath(path, ".ldx");
+
+        using (var reader = File.OpenText(path!))
+        {
             var root = XDocument.Load(reader, LoadOptions.None).Root;
             if (root == null)
             {
@@ -84,10 +85,12 @@ namespace AccMotec.Logic
             var laps = root
                 .Descendants("MarkerGroup")
                 .Descendants("Marker")
-                .Select(d => new MotecLap {
+                .Select(d => new MotecLap
+                {
                     LapNumber = int.Parse(d.Attribute("Name")?.Value?.Split(", ")?[0] ?? "0"),
                     LapTime = Double.Parse(d.Attribute("Time")?.Value ?? "0", NumberStyles.Float) * 1e-6,
-                    SessionTime = Double.Parse(d.Attribute("Time")?.Value ?? "0", NumberStyles.Float) * 1e-6 })
+                    SessionTime = Double.Parse(d.Attribute("Time")?.Value ?? "0", NumberStyles.Float) * 1e-6
+                })
                 .OrderBy(m => m.LapNumber)
                 .ToList();
 
@@ -103,14 +106,17 @@ namespace AccMotec.Logic
             return laps;
         }
 
-        /// <inheritdoc />
-        public async Task<MotecFile> ParseMotecFileAsync(string? path)
-        {
-            ValidatePath(path, ".ld");
+    }
 
-            // "@H,4>?\u001f\u0001@B\u000fD\u001fADL?\u0001??%07/12/202117:59:12Kyalami??\fcR8 LMS EVOP
-            // "@H,4>?\u001f\u0001@B\u000fD\u001fADL?\u0001??%02/12/202121:13:58Imola??\fc991ii GT3 R EVOU
-            using var stream = new FileStream(path!, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 4096, useAsync: true);
+    /// <inheritdoc />
+    public async Task<MotecFile> ParseMotecFileAsync(string? path)
+    {
+        ValidatePath(path, ".ld");
+
+        // "@H,4>?\u001f\u0001@B\u000fD\u001fADL?\u0001??%07/12/202117:59:12Kyalami??\fcR8 LMS EVOP
+        // "@H,4>?\u001f\u0001@B\u000fD\u001fADL?\u0001??%02/12/202121:13:58Imola??\fc991ii GT3 R EVOU
+        using (var stream = new FileStream(path!, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 4096, useAsync: true))
+        {
             var buffer = new byte[0x1000];
             int numRead = await stream.ReadAsync(buffer, 0, buffer.Length);
             if (numRead > 0)
@@ -145,36 +151,36 @@ namespace AccMotec.Logic
                 throw new MotecParseException("Unable to read the first 1000 file bytes");
             }
         }
+    }
 
-        /// <summary>
-        /// Validates if a file path exists or not. Throws an exception if not exists
-        /// </summary>
-        /// <param name="path">The path of the file being checked</param>
-        private void ValidatePath(string? path, string extension)
+    /// <summary>
+    /// Validates if a file path exists or not. Throws an exception if not exists
+    /// </summary>
+    /// <param name="path">The path of the file being checked</param>
+    private void ValidatePath(string? path, string extension)
+    {
+        if (string.IsNullOrEmpty(path))
         {
-            if (string.IsNullOrEmpty(path))
-            {
-                throw new FileNotFoundException("The path was not provided");
-            }
-
-            if (!File.Exists(path))
-            {
-                throw new FileNotFoundException($"The file [{path}] does not exist");
-            }
-
-            if (!Path.GetExtension(path)?.Equals(extension) ?? true)
-            {
-                throw new FileNotFoundException($"The file extension [{Path.GetExtension(path)}] is not valid");
-            }
+            throw new FileNotFoundException("The path was not provided");
         }
 
-        private void ValidateXsd(object? sender, ValidationEventArgs e)
+        if (!File.Exists(path))
         {
-            if (e.Severity == XmlSeverityType.Error || e.Severity == XmlSeverityType.Warning)
-            {
-                // isValid = false;
-                Console.WriteLine($"invalid schema [{e.Message}]");
-            }
+            throw new FileNotFoundException($"The file [{path}] does not exist");
+        }
+
+        if (!Path.GetExtension(path)?.Equals(extension) ?? true)
+        {
+            throw new FileNotFoundException($"The file extension [{Path.GetExtension(path)}] is not valid");
+        }
+    }
+
+    private void ValidateXsd(object? sender, ValidationEventArgs e)
+    {
+        if (e.Severity == XmlSeverityType.Error || e.Severity == XmlSeverityType.Warning)
+        {
+            // isValid = false;
+            Console.WriteLine($"invalid schema [{e.Message}]");
         }
     }
 }

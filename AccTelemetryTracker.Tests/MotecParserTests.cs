@@ -1,10 +1,10 @@
 using NUnit.Framework;
-using AccMotec.Logic;
+using AccTelemetryTracker.Logic;
 using System.IO;
 using System.Threading.Tasks;
 using System.Globalization;
 
-namespace AccMotec.Tests;
+namespace AccTelemetryTracker.Tests;
 
 public class Tests
 {

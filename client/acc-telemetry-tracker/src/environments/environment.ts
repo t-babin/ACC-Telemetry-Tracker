@@ -3,9 +3,9 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  apiUrl: "https://localhost:7112",
-  discordClient: "",
-  production: false
+  production: true,
+  apiUrl: (window as any)['env']['apiUrl'] || 'https://localhost:7112',
+  discordClient: (window as any)['env']['discordClient'] || ''
 };
 
 /*

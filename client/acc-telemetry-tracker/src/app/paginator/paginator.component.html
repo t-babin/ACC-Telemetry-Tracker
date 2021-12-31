@@ -1,0 +1,35 @@
+<div fxLayout="row wrap" fxLayoutAlign="center center">
+    <div fxLayout fxLayoutAlign="space-between">
+        <div fxLayout style="width: 140px; margin-right: 1rem;">
+            <p class="font page-size">Items per page:</p>
+            <mat-select style="width: 30%; font-size: 9pt;" [(value)]="pageSize" (selectionChange)="pageSizeChange()">
+                <mat-option *ngFor="let p of pageSizes" [value]="p">{{ p }}</mat-option>
+            </mat-select>
+        </div>
+        <p class="font">{{ currentPage + 1 }} - {{ (dataLength > 0 && currentPage + pageSize > dataLength) ? dataLength : (currentPage + pageSize) }} of {{ dataLength }}</p>
+    </div>
+    <div fxLayout>
+        <!-- previous page -->
+        <div fxLayout fxLayoutAlign="center center">
+            <button mat-icon-button class="arrow"
+                [disabled]="(dataLength !== 0 && currentPage <= 0)" (click)="firstDataPage()">
+                <mat-icon>first_page</mat-icon>
+            </button>
+            <button mat-icon-button class="arrow"
+                [disabled]="(dataLength !== 0 && currentPage <= 0)" (click)="previousDataPage()">
+                <mat-icon>keyboard_arrow_left</mat-icon>
+            </button>
+        </div>
+        <!-- next page -->
+        <div fxLayout fxLayoutAlign="center center">
+            <button mat-icon-button class="arrow"
+                [disabled]="(dataLength !== 0 && currentPage + pageSize >= dataLength)" (click)="nextDataPage()">
+                <mat-icon>keyboard_arrow_right</mat-icon>
+            </button>
+            <button mat-icon-button class="arrow"
+                [disabled]="(dataLength !== 0 && currentPage + pageSize >= dataLength)" (click)="lastDataPage()">
+                <mat-icon>last_page</mat-icon>
+            </button>
+        </div>
+    </div>
+</div>

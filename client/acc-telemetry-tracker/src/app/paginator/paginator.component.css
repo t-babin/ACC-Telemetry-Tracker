@@ -1,0 +1,13 @@
+.font {
+    margin-bottom: 0 !important;
+    font-size: 11px;
+}
+
+.arrow * {
+    margin-bottom: 0.5%;
+    font-size: 18px !important;
+}
+
+.page-size {
+    margin-right: 8px;
+}

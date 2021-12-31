@@ -4,7 +4,7 @@
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
 acc.db
-AccTelemetryTracker.Api/files/
+server/AccTelemetryTracker.Api/files/
 
 # User-specific files
 *.rsuser

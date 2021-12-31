@@ -1,0 +1,29 @@
+/* nav a {
+    padding: 1rem;
+    margin: 5px;
+    border: 1px solid #10152C;
+    text-decoration: none;
+    text-transform: uppercase;
+    display: inline-block;
+    color: #DA4D1A;
+    border-radius: 8px;
+}
+
+nav a:hover {
+    color: white;
+    background-color: #3F599F;
+    -webkit-box-shadow: 4px 4px 10px 0px rgba(0,0,0,0.5); 
+    box-shadow: 4px 4px 10px 0px rgba(0,0,0,0.5);
+    cursor: pointer;
+} */
+
+nav {
+    border-bottom: solid 1px #DA4D1A;
+    margin: 1rem;
+    padding: 0.5rem;
+}
+
+.active-link {
+    text-decoration: underline;
+    font-weight: 500;
+}

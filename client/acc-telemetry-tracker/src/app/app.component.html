@@ -1,0 +1,25 @@
+<nav>
+  <div fxLayout fxLayoutAlign="space-between">
+    <div *ngIf="user; else emptyUser" fxLayout fxLayoutAlign="start center">
+      <p style="margin-right: 1rem;">{{ user.username }}</p>
+      <img [src]="getUserImage()" width="45px" style="border-radius: 8px;">
+    </div>
+    <ng-template #emptyUser>
+      &nbsp;
+    </ng-template>
+    <div fxLayout fxLayoutAlign="start center" style="text-align: center;">
+      <div class="mat-display-3" style="margin-bottom: 0;">ACC Telemetry Tracker</div>
+    </div>
+    <div fxLayout fxLayoutAlign="start center" *ngIf="user; else emptyUserTwo">
+      <a routerLink="/admin" *ngIf="user.role === 'admin'" routerLinkActive="active-link" [routerLinkActiveOptions]="{exact: true}">Admin</a>
+      <a routerLink="/dashboard" routerLinkActive="active-link" [routerLinkActiveOptions]="{exact: true}">Motec Files</a>
+      <a (click)="logout()">Logout</a>
+    </div>
+    <ng-template #emptyUserTwo>
+      &nbsp;
+    </ng-template>
+  </div>
+</nav>
+
+
+<router-outlet></router-outlet>

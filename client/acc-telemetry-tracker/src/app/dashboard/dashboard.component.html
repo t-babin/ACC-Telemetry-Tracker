@@ -1,0 +1,171 @@
+<div class="container">
+    <app-loader [component]="'data'" [visible]="loadingFiles"></app-loader>
+    <div fxLayout fxLayoutAlign="space-between start">
+        <div fxLayout="column" fxLayoutAlign="space-between" *ngIf="!loadingFiles">
+            <a (click)="reload()">Reload Data</a>
+
+            <input type="file" style="display: none;" (change)="onFileSelected($event)"
+                accept="application/x-zip-compressed" #fileUpload>
+            <a (click)="fileUpload.click()">Upload File</a>
+
+            <div fxLayout="column" style="margin-top: 1.5rem;">
+                <mat-form-field>
+                    <mat-label>Filter for Car</mat-label>
+                    <mat-select multiple [formControl]="selectedCars" (selectionChange)="onFilterChange($event)">
+                        <mat-option *ngFor="let c of cars" [value]="c.id">{{ c.name }}</mat-option>
+                    </mat-select>
+                </mat-form-field>
+
+                <mat-form-field>
+                    <mat-label>Filter for Track</mat-label>
+                    <mat-select multiple [formControl]="selectedTracks" (selectionChange)="onFilterChange($event)">
+                        <mat-option *ngFor="let t of tracks" [value]="t.id">{{ t.name }}</mat-option>
+                    </mat-select>
+                </mat-form-field>
+
+                <mat-form-field>
+                    <mat-label>Filter for User</mat-label>
+                    <mat-select multiple [formControl]="selectedUsers" (selectionChange)="onFilterChange($event)">
+                        <mat-option *ngFor="let u of users" [value]="u.id">{{ u.serverName }}</mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+        </div>
+        <div fxLayout="column" style="width: 80%; margin: 0 auto;">
+
+            <div fxLayout fxLayoutAlign="end">
+                <app-paginator [dataLength]="fileCount" [hidden]="motecFiles === null || motecFiles?.length === 0" (pageEvent)="page($event)" [pageSizes]="[20, 50, 100]" [pageSize]="pageSize"></app-paginator>
+            </div>
+            <table mat-table [dataSource]="motecFiles" multiTemplateDataRows *ngIf="!loadingFiles">
+
+                <ng-container matColumnDef="car">
+                    <th mat-header-cell *matHeaderCellDef>Car</th>
+                    <td mat-cell *matCellDef="let element">{{ element.carName}}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="carClass">
+                    <th mat-header-cell *matHeaderCellDef>Car Class</th>
+                    <td mat-cell *matCellDef="let element">{{ element.carClass }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="track">
+                    <th mat-header-cell *matHeaderCellDef>Track</th>
+                    <td mat-cell *matCellDef="let element">{{ element.trackName }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="user">
+                    <th mat-header-cell *matHeaderCellDef>User</th>
+                    <td mat-cell *matCellDef="let element">{{ element.username }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="numLaps">
+                    <th mat-header-cell *matHeaderCellDef>
+                        <div fxLayout fxLayoutAlign="center center">
+                            <p>Number of Counted Laps</p>
+                            <mat-icon style="font-size: 14px; margin-top: 4px;" matTooltip="Only laps within a certain time range will be counted" [matTooltipPosition]="'above'">info</mat-icon>
+                        </div>
+                    </th>
+                    <td mat-cell *matCellDef="let element">{{ element.numberOfLaps}}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="fastestLap">
+                    <th mat-header-cell *matHeaderCellDef>Fastest Lap</th>
+                    <td mat-cell *matCellDef="let element">{{ element.fastestLap | time }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="dateLoaded">
+                    <th mat-header-cell *matHeaderCellDef>Date Added</th>
+                    <td mat-cell *matCellDef="let element">{{ element.dateInserted | date:'short' }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="showLaps">
+                    <th mat-header-cell *matHeaderCellDef>Laps</th>
+                    <td mat-cell *matCellDef="let element">
+                        <mat-icon *ngIf="selectedFile !== element; else shown"
+                            style="cursor: pointer; transform: rotate(45deg);" (click)="showLaps(element)">close
+                        </mat-icon>
+                        <ng-template #shown>
+                            <mat-icon style="cursor: pointer;" (click)="showLaps(element)">close</mat-icon>
+                        </ng-template>
+                    </td>
+                </ng-container>
+
+                <ng-container matColumnDef="download">
+                    <th mat-header-cell *matHeaderCellDef></th>
+                    <td mat-cell *matCellDef="let element">
+                        <mat-icon style="cursor: pointer;" (click)="downloadFile(element)">save</mat-icon>
+                    </td>
+                </ng-container>
+
+                <ng-container matColumnDef="expandedDetail">
+                    <td mat-cell *matCellDef="let element" [attr.colspan]="9">
+                        <div class="example-element-detail"
+                            [@detailExpand]="element == selectedFile ? 'expanded' : 'collapsed'">
+                            <div fxLayout style="width: 100%; max-height: 460px;" *ngIf="!loadingLaps">
+                                <div style="overflow: auto; max-height: 450px; width: 20%; margin: 0px 1rem 1rem 1rem;">
+                                    <table mat-table [dataSource]="laps" style="width: 94%; margin-left: 1%;">
+
+                                        <ng-container matColumnDef="lapNumber">
+                                            <th mat-header-cell *matHeaderCellDef>Lap</th>
+                                            <td mat-cell *matCellDef="let element"
+                                                [ngClass]="fastest(element) ? 'fastest' : ''">{{ element.lapNumber + 1
+                                                }}</td>
+                                        </ng-container>
+
+                                        <ng-container matColumnDef="lapTime">
+                                            <th mat-header-cell *matHeaderCellDef>Lap Time</th>
+                                            <td mat-cell *matCellDef="let element"
+                                                [ngClass]="fastest(element) ? 'fastest' : ''">{{ element.lapTime | time
+                                                }}</td>
+                                        </ng-container>
+
+                                        <tr mat-header-row *matHeaderRowDef="['lapNumber', 'lapTime']; sticky: true">
+                                        </tr>
+                                        <tr mat-row *matRowDef="let row; columns: ['lapNumber', 'lapTime'];"
+                                            [ngClass]="fastest(row) ? 'fastest-row' : ''"></tr>
+                                    </table>
+                                </div>
+
+                                <div style="width: 78%;">
+                                    <app-loader [component]="'chart'" [visible]="loadingLapChart"></app-loader>
+                                    <ngx-charts-line-chart *ngIf="!loadingLapChart" [xAxisLabel]="'Lap'"
+                                        [yAxisLabel]="'Lap Time'" [showYAxisLabel]="true" [results]="lapData"
+                                        [xAxis]="true" [showGridLines]="true" [autoScale]="true">
+                                        <!-- [yScaleMin]="minLapTime"
+                                        [yScaleMax]="maxLapTime" -->
+                                        <!-- [scheme]="colorScheme" -->
+                                        <ng-template #tooltipTemplate let-model="model">
+                                            <h2 style="color: white; margin-bottom: 0;">{{ model.name }}</h2>
+                                            <h3>{{ model.value | time }}</h3>
+                                        </ng-template>
+                                        <ng-template #seriesTooltipTemplate let-model="model">
+                                            <h2 style="color: white; margin-bottom: 0;">{{ model[0].name }}</h2>
+                                            <h3>{{ model[0].value | time }}</h3>
+                                        </ng-template>
+                                    </ngx-charts-line-chart>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </ng-container>
+
+                <tr mat-header-row
+                    *matHeaderRowDef="['car', 'carClass', 'track', 'user', 'numLaps', 'fastestLap', 'dateLoaded', 'showLaps', 'download']">
+                </tr>
+                <tr mat-row
+                    *matRowDef="let element; columns: ['car', 'carClass', 'track', 'user', 'numLaps', 'fastestLap', 'dateLoaded', 'showLaps', 'download'];"
+                    class="example-element-row" [class.example-expanded-row]="selectedFile === element">
+                </tr>
+                <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="example-detail-row"
+                    [ngClass]="selectedFile === row ? 'selected-row' : ''"></tr>
+            </table>
+
+            <!-- TODO more charts -->
+            <!-- 
+                count of each car/track
+                fastest lap for each car on each track
+                avg lap time per car per track
+             -->
+        </div>
+    </div>
+</div>

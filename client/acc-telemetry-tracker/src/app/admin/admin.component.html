@@ -1,0 +1,59 @@
+<div fxLayout="column" class="container">
+    <app-loader [component]="'users'" [visible]="loading"></app-loader>
+    <div *ngIf="!loading">
+        <div style="width: 20%;" fxLayout fxLayoutAlign="space-between center">
+            <mat-form-field style="width: 70%;">
+                <mat-label>Filter for user</mat-label>
+                <input matInput [(ngModel)]="filterValue">
+            </mat-form-field>
+
+            <a *ngIf="hasUpdates()" (click)="submitChanges()" style="margin-top: -1.5rem;">Update</a>
+        </div>
+
+        <table mat-table [dataSource]="users">
+            <ng-container matColumnDef="username">
+                <th mat-header-cell *matHeaderCellDef>Discord Username</th>
+                <td mat-cell *matCellDef="let element"> {{ element.username }} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="servername">
+                <th mat-header-cell *matHeaderCellDef>Server Name</th>
+                <td mat-cell *matCellDef="let element"> {{ element.serverName }} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="isValid">
+                <th mat-header-cell *matHeaderCellDef>Activated?</th>
+                <td mat-cell *matCellDef="let element">
+                    <mat-checkbox [(ngModel)]="element.isValid" color="primary"></mat-checkbox>
+                </td>
+            </ng-container>
+
+            <ng-container matColumnDef="role">
+                <th mat-header-cell *matHeaderCellDef>User Role</th>
+                <td mat-cell *matCellDef="let element">
+                    <mat-select [(ngModel)]="element.role">
+                        <mat-option [value]="'user'">user</mat-option>
+                        <mat-option [value]="'admin'">admin</mat-option>
+                    </mat-select>
+                </td>
+            </ng-container>
+
+            <ng-container matColumnDef="signupDate">
+                <th mat-header-cell *matHeaderCellDef>Signup Date</th>
+                <td mat-cell *matCellDef="let element"> {{ element.signupDate | date: 'long' }} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="fileCount">
+                <th mat-header-cell *matHeaderCellDef>Files Uploaded</th>
+                <td mat-cell *matCellDef="let element"> {{ element.fileUploadCount }} </td>
+            </ng-container>
+
+            <tr mat-header-row
+                *matHeaderRowDef="['username', 'servername', 'isValid', 'role', 'signupDate', 'fileCount']">
+            </tr>
+            <tr mat-row
+                *matRowDef="let row; columns: ['username', 'servername', 'isValid', 'role', 'signupDate', 'fileCount'];">
+            </tr>
+        </table>
+    </div>
+</div>

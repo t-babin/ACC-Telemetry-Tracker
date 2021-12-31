@@ -1,0 +1,26 @@
+.mat-cell,
+.mat-header-cell {
+    padding: 0px 5px;
+    text-align: center;
+}
+
+table {
+	background-color: #F6F7EC;
+	border-collapse: collapse;
+}
+
+.mat-cell,
+.mat-header-cell {
+    padding: 0px 5px;
+    text-align: center;
+	color: inherit;
+	border: none;
+}
+
+.mat-cell {
+	font-weight: 300;
+}
+
+.mat-header-cell {
+	font-size: 15px;
+}

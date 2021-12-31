@@ -1,0 +1,49 @@
+/* * { */
+    /* font-family: Roboto,Helvetica Neue Light,Helvetica Neue,Helvetica,Arial,Lucida Grande,sans-serif; */
+    /* font-family: 'Fira Sans Condensed', sans-serif; */
+/* } */
+
+body {
+    background-color: #F6F7EC;
+    /* background-color: #EAE7DC; */
+}
+
+p, h1 {
+    /* color: #10152C; */
+    margin-bottom: 0 !important;
+}
+/* html, body { height: 100%; } */
+body {
+    margin: 0;
+    /* font-family: Roboto, "Helvetica Neue", sans-serif; */
+    /* font-family: 'Fira Sans Condensed', sans-serif; */
+}
+
+.container {
+    margin: 3rem;
+}
+
+table {
+    width: 100%;
+}
+
+a {
+    padding: 0.75rem;
+    margin: 5px;
+    border: 1px solid #10152C;
+    text-decoration: none;
+    text-transform: uppercase;
+    display: inline-block;
+    border-radius: 8px;
+    text-align: center;
+    color: #F6F7EC;
+    background-color: #3F599F;
+}
+
+a:hover {
+    color: #F6F7EC;
+    background-color: #10152C;
+    -webkit-box-shadow: 4px 4px 10px 0px rgba(0,0,0,0.5); 
+    box-shadow: 4px 4px 10px 0px rgba(0,0,0,0.5);
+    cursor: pointer;
+}

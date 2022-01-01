@@ -32,7 +32,7 @@ CREATE TABLE MotecFiles (
   Id int NOT NULL AUTO_INCREMENT,
   CarId int NOT NULL,
   TrackId int NOT NULL,
-  UserId int NOT NULL,
+  UserId bigint NOT NULL,
   DateInserted DATETIME NOT NULL,
   SessionDate DATETIME NOT NULL,
   NumberOfLaps int NOT NULL,

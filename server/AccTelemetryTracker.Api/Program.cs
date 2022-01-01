@@ -39,7 +39,8 @@ try
         Log.Information("Connecting to a dockerized database");
         var connectionString = $"server={databaseHost};database={databaseName};user={databaseUser};password={databasePassword};";
         var version = ServerVersion.AutoDetect(connectionString);
-        builder.Services.AddDbContext<AccTelemetryTrackerContext>(x => x.UseMySql(connectionString, version).EnableDetailedErrors().EnableSensitiveDataLogging());
+        builder.Services.AddDbContext<AccTelemetryTrackerContext>(x => x.UseMySql(connectionString, version, options =>
+            options.EnableRetryOnFailure(10, TimeSpan.FromSeconds(5), null)).EnableDetailedErrors().EnableSensitiveDataLogging());
     }
 
     var _clientId = builder.Configuration.GetValue<string>("DISCORD_CLIENT_ID");

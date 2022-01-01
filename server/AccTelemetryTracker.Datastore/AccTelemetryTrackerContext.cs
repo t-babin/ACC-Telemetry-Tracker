@@ -102,7 +102,10 @@ public class AccTelemetryTrackerContextFactory : IDesignTimeDbContextFactory<Acc
     public AccTelemetryTrackerContext CreateDbContext(string[] args)
     {
         var optionsBuilder = new DbContextOptionsBuilder<AccTelemetryTrackerContext>();
-        optionsBuilder.UseSqlite("Data Source=C:\\Code\\ACC-Telemetry-Tracker\\acc.db");
+        // optionsBuilder.UseSqlite("Data Source=C:\\Code\\ACC-Telemetry-Tracker\\acc.db");
+        var connectionString = "server=192.168.2.13;port=3309;database=acc_telemetry_tracker;user=root;password=my-secret-pw;";
+        var version = ServerVersion.AutoDetect(connectionString);
+        optionsBuilder.UseMySql(connectionString, version);
 
         return new AccTelemetryTrackerContext(optionsBuilder.Options);
     }

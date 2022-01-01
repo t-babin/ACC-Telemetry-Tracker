@@ -29,13 +29,15 @@ try
 
     if (new [] { databaseHost, databaseName, databaseUser, databasePassword }.Any(s => string.IsNullOrEmpty(s)))
     {
-        // TODO docker configuration with postgres
         Log.Information("Connecting to a local sqlite database");
         builder.Services.AddDbContext<AccTelemetryTrackerContext>(x => x.UseSqlite(builder.Configuration.GetConnectionString("MotecSqlite")));
     }
     else
     {
         Log.Information("Connecting to a dockerized database");
+        var connectionString = $"server={databaseHost};database={databaseName};user={databaseUser};password={databasePassword};";
+        var version = ServerVersion.AutoDetect(connectionString);
+        builder.Services.AddDbContext<AccTelemetryTrackerContext>(x => x.UseMySql(connectionString, version).EnableDetailedErrors().EnableSensitiveDataLogging());
     }
 
     var _clientId = builder.Configuration.GetValue<string>("DISCORD_CLIENT_ID");

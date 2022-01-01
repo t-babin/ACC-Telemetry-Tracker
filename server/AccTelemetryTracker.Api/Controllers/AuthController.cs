@@ -16,6 +16,7 @@ public class AuthController : ControllerBase
     private readonly IAuditRepository _auditRepo;
     private readonly string _clientId;
     private readonly string _clientSecret;
+    private readonly string _frontendUrl;
     private readonly IConfiguration _config;
     public AuthController(ILogger<AuthController> logger, AccTelemetryTrackerContext context, IAuditRepository auditRepo, IConfiguration config)
     {
@@ -26,6 +27,7 @@ public class AuthController : ControllerBase
 
         _clientId = config.GetValue<string>("DISCORD_CLIENT_ID");
         _clientSecret = config.GetValue<string>("DISCORD_CLIENT_SECRET");
+        _frontendUrl = config.GetValue<string>("FRONTEND_URL");
     }
 
     [HttpGet("callback")]

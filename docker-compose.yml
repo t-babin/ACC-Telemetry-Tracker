@@ -1,0 +1,51 @@
+version: '3.3'
+
+services:
+  frontend:
+    build:
+      context: ./client/acc-telemetry-tracker
+      dockerfile: Dockerfile
+    depends_on:
+      - api
+    restart: always
+    environment:
+      API_URL: http://api
+      DISCORD_CLIENT_ID: 
+    ports:
+      - 8345:80
+  
+  database:
+    build:
+      context: ./datastore
+      dockerfile: Dockerfile
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: super-secure-root-password
+      MYSQL_DATABASE: acc_telemetry_tracker
+      MYSQL_USER: acc_user
+      MYSQL_PASSWORD: acc_password
+
+  api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    depends_on:
+      - database
+    restart: always
+    environment:
+      DATABASE_HOST: database
+      DATABASE_NAME: acc_telemetry_tracker
+      DATABASE_USER: acc_user
+      DATABASE_PASSWORD: acc_password
+      DISCORD_CLIENT_ID: 
+      DISCORD_CLIENT_SECRET: 
+      DISCORD_GUILD_ID: 
+      STORAGE_PATH: /motec
+      FRONTEND_URL: http://frontend:8345
+    ports:
+      - 8346:80
+
+volumes:
+  db_data:

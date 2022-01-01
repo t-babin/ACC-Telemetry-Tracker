@@ -129,7 +129,7 @@ public class MotecParser : IMotecParser
                 _logger.LogInformation($"Read [{numRead}] bytes from the file");
                 var text = Encoding.ASCII.GetString(buffer, 0, numRead).Replace("\0", "");
                 var parts = text.Split("??").Skip(1).ToArray();
-                if (DateTime.TryParseExact(parts[0][1..19], "dd/MM/yyyyHH:mm:ss", new CultureInfo("en-US"), DateTimeStyles.None, out var date))
+                if (DateTime.TryParseExact(parts[0][1..19], "dd/MM/yyyyHH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
                 {
                     if (date.Equals(default(DateTime)))
                     {

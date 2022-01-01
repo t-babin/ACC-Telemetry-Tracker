@@ -307,6 +307,12 @@ public class MotecController : ControllerBase
                     _logger.LogError(ex, ex.Message);
                     return BadRequest(new { Message = ex.Message });
                 }
+                catch (Exception ex)
+                {
+                    _logger.LogError("Unknown exception occurred");
+                    _logger.LogError(ex, ex.Message);
+                    return BadRequest(new { Message = ex.Message });
+                }
                 finally
                 {
                     _logger.LogInformation($"Deleting the temp directory [{tempDir.FullName}]");

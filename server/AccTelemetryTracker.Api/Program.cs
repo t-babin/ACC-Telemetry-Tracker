@@ -73,7 +73,7 @@ try
         options.AddDefaultPolicy(
             builder =>
             {
-                builder.WithOrigins("https://localhost:7112", "http://localhost:4200")
+                builder.AllowAnyOrigin()
                 .AllowAnyHeader()
                 .AllowAnyMethod()
                 .AllowCredentials();

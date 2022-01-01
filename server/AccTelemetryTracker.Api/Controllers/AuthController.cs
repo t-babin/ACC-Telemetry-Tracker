@@ -125,8 +125,8 @@ public class AuthController : ControllerBase
                     Role = user.Role
                 };
 
-                Response.Cookies.Append("auth", authContent, new CookieOptions { HttpOnly = true, IsEssential = true, SameSite = SameSiteMode.None, Secure = true, Expires = DateTime.Now.AddMinutes(30) });
-                Response.Cookies.Append("user", JsonSerializer.Serialize(userCookie), new CookieOptions { HttpOnly = false, IsEssential = true, SameSite = SameSiteMode.None, Secure = true, Expires = DateTime.Now.AddMinutes(30) });
+                Response.Cookies.Append("auth", authContent, new CookieOptions { HttpOnly = true, IsEssential = true, SameSite = SameSiteMode.Lax, Secure = false, Expires = DateTime.Now.AddMinutes(30) });
+                Response.Cookies.Append("user", JsonSerializer.Serialize(userCookie), new CookieOptions { HttpOnly = false, IsEssential = true, SameSite = SameSiteMode.Lax, Secure = false, Expires = DateTime.Now.AddMinutes(30) });
             }
             catch (HttpRequestException ex)
             {

@@ -79,7 +79,7 @@ public class AuthController : ControllerBase
                     if (!inGuild)
                     {
                         _logger.LogWarning($"The user [{userInfoJson.GetProperty("id").GetString()}] is not in the guild [{guildId}]");
-                        return Redirect("http://localhost:4200/unauthorized");
+                        return Redirect($"{_frontendUrl}/unauthorized");
                     }
 
                     var guildMemberRequest = await client.GetAsync($"https://discord.com/api/users/@me/guilds/{guildId}/member");
@@ -134,7 +134,6 @@ public class AuthController : ControllerBase
             }
         }
 
-        // TODO read from config
-        return Redirect("http://localhost:4200/dashboard");
+        return Redirect($"{_frontendUrl}/dashboard");
     }
 }

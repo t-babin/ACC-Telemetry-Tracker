@@ -41,24 +41,31 @@ try
     }
     else
     {
-        Log.Information("Connecting to a dockerized database");
-        var connectionString = $"server={databaseHost};database={databaseName};user={databaseUser};password={databasePassword};";
-        var version = ServerVersion.AutoDetect(connectionString);
-        builder.Services.AddDbContext<AccTelemetryTrackerContext>(x => x.UseMySql(connectionString, version, options =>
-            options.EnableRetryOnFailure(
-                maxRetryCount: 10,
-                maxRetryDelay: TimeSpan.FromSeconds(30),
-                errorNumbersToAdd: null))
-            .EnableDetailedErrors()
-            .EnableSensitiveDataLogging()
-            .LogTo(
-                filter: (eventId, level) => eventId.Id == CoreEventId.ExecutionStrategyRetrying,
-                logger: (eventData) =>
-                {
-                    var retryEventData = eventData as ExecutionStrategyEventData;
-                    var exceptions = retryEventData!.ExceptionsEncountered;
-                    Console.WriteLine($"Retry #{exceptions.Count} with delay {retryEventData.Delay} due to error: {exceptions.Last().Message}");
-                }));
+        try
+        {
+            Log.Information("Connecting to a dockerized database");
+            var connectionString = $"server={databaseHost};database={databaseName};user={databaseUser};password={databasePassword};";
+            // var version = ServerVersion.AutoDetect(connectionString);
+            builder.Services.AddDbContext<AccTelemetryTrackerContext>(x => x.UseMySql(connectionString, new MySqlServerVersion(new Version(5, 7, 34)), options =>
+                options.EnableRetryOnFailure(
+                    maxRetryCount: 10,
+                    maxRetryDelay: TimeSpan.FromSeconds(30),
+                    errorNumbersToAdd: null))
+                .EnableDetailedErrors()
+                .EnableSensitiveDataLogging()
+                .LogTo(
+                    filter: (eventId, level) => eventId.Id == CoreEventId.ExecutionStrategyRetrying,
+                    logger: (eventData) =>
+                    {
+                        var retryEventData = eventData as ExecutionStrategyEventData;
+                        var exceptions = retryEventData!.ExceptionsEncountered;
+                        Console.WriteLine($"Retry #{exceptions.Count} with delay {retryEventData.Delay} due to error: {exceptions.Last().Message}");
+                    }));
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, ex.Message);
+        }
     }
 
     var _clientId = builder.Configuration.GetValue<string>("DISCORD_CLIENT_ID");

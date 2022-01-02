@@ -16,8 +16,8 @@ export class HeaderInterceptor implements HttpInterceptor {
             request = request.clone({
                 setHeaders: {
                     'Content-Type':  'application/json',
-                    'Access-Control-Allow-Origin': `${environment.apiUrl}`,
-                    'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept'
+                    // 'Access-Control-Allow-Origin': `${environment.apiUrl}`,
+                    // 'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept'
                 },
             });
             return next.handle(request);

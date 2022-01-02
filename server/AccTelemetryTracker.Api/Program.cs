@@ -24,7 +24,6 @@ try
     builder.Services.AddControllers();
 
     var frontendUrl = builder.Configuration.GetValue<string>("FRONTEND_URL");
-
     var databaseHost = builder.Configuration.GetValue<string>("DATABASE_HOST");
     var databaseName = builder.Configuration.GetValue<string>("DATABASE_NAME");
     var databaseUser = builder.Configuration.GetValue<string>("DATABASE_USER");
@@ -101,10 +100,11 @@ try
         options.AddDefaultPolicy(
             builder =>
             {
-                builder.WithOrigins(frontendUrl)
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowCredentials();
+                builder
+                    .SetIsOriginAllowed((host) => true)
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials();
             });
     });
 

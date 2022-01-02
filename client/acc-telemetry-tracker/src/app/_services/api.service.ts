@@ -73,6 +73,6 @@ export class ApiService {
     authenticateWithCode(code: string): Observable<any> {
         let params = new HttpParams();
         params = params.append('code', code);
-        return this.httpClient.get<any>(`${this.API_BASE_URL}/auth/callback`, { params: params });
+        return this.httpClient.get<any>(`${this.API_BASE_URL}/api/auth/callback`, { params: params });
     }
 }

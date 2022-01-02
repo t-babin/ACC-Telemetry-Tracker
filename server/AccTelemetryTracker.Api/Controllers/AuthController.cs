@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace AccTelemetryTracker.Api.Controllers;
 
 [ApiController]
-[Route("[controller]")]
+[Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
     private readonly ILogger<AuthController> _logger;

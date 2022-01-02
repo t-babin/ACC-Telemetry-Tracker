@@ -53,6 +53,7 @@ public class AuthController : ControllerBase
             {
                 var response = await client.SendAsync(request);
                 var authContent = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation(authContent);
                 response.EnsureSuccessStatusCode();
                 _logger.LogInformation("Got token from discord API");
                 var asJson = JsonDocument.Parse(authContent).RootElement;

@@ -41,7 +41,7 @@ public class AuthController : ControllerBase
                 { "client_id", _clientId },
                 { "client_secret", _clientSecret },
                 { "grant_type", "authorization_code" },
-                { "redirect_uri", $"{Request.Scheme}://{Request.Host.Value}/auth/callback" },
+                { "redirect_uri", $"{_frontendUrl}/auth" },
             };
 
             var request = new HttpRequestMessage(HttpMethod.Post, "https://discord.com/api/oauth2/token")
@@ -79,7 +79,7 @@ public class AuthController : ControllerBase
                     if (!inGuild)
                     {
                         _logger.LogWarning($"The user [{userInfoJson.GetProperty("id").GetString()}] is not in the guild [{guildId}]");
-                        return Redirect($"{_frontendUrl}/unauthorized");
+                        return Unauthorized();
                     }
 
                     var guildMemberRequest = await client.GetAsync($"https://discord.com/api/users/@me/guilds/{guildId}/member");
@@ -134,6 +134,6 @@ public class AuthController : ControllerBase
             }
         }
 
-        return Redirect($"{_frontendUrl}/dashboard");
+        return Ok();
     }
 }

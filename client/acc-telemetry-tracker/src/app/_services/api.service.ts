@@ -69,4 +69,10 @@ export class ApiService {
     getFileCount(): Observable<number> {
         return this.httpClient.get<number>(`${this.API_BASE_URL}/api/motec/count`);
     }
+
+    authenticateWithCode(code: string): Observable<any> {
+        let params = new HttpParams();
+        params = params.append('code', code);
+        return this.httpClient.get<any>(`${this.API_BASE_URL}/auth/callback`, { params: params });
+    }
 }

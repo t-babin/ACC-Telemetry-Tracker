@@ -29,7 +29,7 @@ export class AuthenticationService {
             'https://discord.com/api/oauth2/authorize?'
             + 'response_type=code'
             + `&client_id=${this.DISCORD_CLIENT_ID}`
-            + `&redirect_uri=${this.API_URL}/auth/callback`
+            + `&redirect_uri=${window.location.origin}/auth`
             + '&scope=identify guilds guilds.members.read';
 
         window.location.href = url;
@@ -47,10 +47,12 @@ export class AuthenticationService {
         }
     }
 
-    logout(): void {
+    logout(navigate?: boolean): void {
         document.cookie = 'user=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
         this.userSubject.next(null);
         this.isAuthorized = false;
-        this.router.navigate(['/login']);
+        if (navigate) {
+            this.router.navigate(['/login']);
+        }
     }
 }

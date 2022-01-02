@@ -30,6 +30,7 @@ import { ErrorInterceptor } from './_interceptors/error.interceptor';
 import { MessagingComponent } from './messaging/messaging.component';
 import { PaginatorComponent } from './paginator/paginator.component';
 import { UnauthorizedComponent } from './unauthorized/unauthorized.component';
+import { AuthComponent } from './auth/auth.component';
 
 @NgModule({
   declarations: [
@@ -42,7 +43,8 @@ import { UnauthorizedComponent } from './unauthorized/unauthorized.component';
     AdminComponent,
     MessagingComponent,
     PaginatorComponent,
-    UnauthorizedComponent
+    UnauthorizedComponent,
+    AuthComponent
   ],
   imports: [
     BrowserModule,

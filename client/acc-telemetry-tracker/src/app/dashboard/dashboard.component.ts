@@ -1,5 +1,5 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
-import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { Car } from '../_models/car';
@@ -11,7 +11,6 @@ import { AuthenticationService } from '../_services/authentication.service';
 import { saveAs } from 'file-saver';
 
 import * as moment from 'moment';
-import { MatPaginator } from '@angular/material/paginator';
 
 @Component({
   selector: 'app-dashboard',

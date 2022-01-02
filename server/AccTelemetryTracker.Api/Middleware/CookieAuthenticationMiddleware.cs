@@ -18,7 +18,7 @@ namespace AccTelemetryTracker.Api.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
-            if (context.Request.Path.HasValue && context.Request.Path.Value.Equals("/auth/callback"))
+            if (context.Request.Path.HasValue && context.Request.Path.Value.Equals("/api/auth/callback"))
             {
                 await _next(context);
                 return;

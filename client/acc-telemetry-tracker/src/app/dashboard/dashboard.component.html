@@ -6,7 +6,12 @@
 
             <input type="file" style="display: none;" (change)="onFileSelected($event)"
                 accept="application/x-zip-compressed" #fileUpload>
-            <a (click)="fileUpload.click()" *ngIf="authService.userValue?.isValid; else disabledUser">Upload File</a>
+            <div fxLayout="column" *ngIf="authService.userValue?.isValid; else disabledUser">
+                <a (click)="fileUpload.click()" *ngIf="!processingUpload; else processing">Upload File</a>
+                <ng-template #processing>
+                    <a class="disabled">Upload File</a>
+                </ng-template>
+            </div>
             <ng-template #disabledUser>
                 <a class="disabled" matTooltip="Uploading is disabled until you are activated.">Upload File</a>
             </ng-template>
@@ -96,15 +101,19 @@
                 <ng-container matColumnDef="download">
                     <th mat-header-cell *matHeaderCellDef></th>
                     <td mat-cell *matCellDef="let element">
-                        <mat-icon style="cursor: pointer;" (click)="downloadFile(element)">save</mat-icon>
+                        <mat-icon style="cursor: pointer;" (click)="downloadFile(element)" *ngIf="downloadId !== element.id; else loadingDownload">save</mat-icon>
+                        <ng-template #loadingDownload>
+                            <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+                        </ng-template>
                     </td>
                 </ng-container>
 
                 <ng-container matColumnDef="expandedDetail">
                     <td mat-cell *matCellDef="let element" [attr.colspan]="9">
-                        <div class="example-element-detail" [@detailExpand]="element == selectedFile ? 'expanded' : 'collapsed'">
-                            <div fxLayout style="width: 100%; max-height: 460px;" *ngIf="!loadingLaps">
-                                <div style="overflow: auto; max-height: 450px; width: 20%; margin: 0px 1rem 1rem 1rem;">
+                        <div class="example-element-detail" [@detailExpand]="element == selectedFile ? 'expanded' : 'collapsed'" fxLayout="column">
+                            <app-loader style="margin: 1rem;" [component]="'laps'" [visible]="loadingLaps"></app-loader>
+                            <div fxLayout style="width: 100%; max-height: 460px;">
+                                <div style="overflow: auto; max-height: 450px; width: 20%; margin: 0px 1rem 1rem 1rem;" *ngIf="!loadingLaps">
                                     <table mat-table [dataSource]="laps" style="width: 94%; margin-left: 1%;">
 
                                         <ng-container matColumnDef="lapNumber">
@@ -126,7 +135,7 @@
                                     </table>
                                 </div>
 
-                                <div style="width: 78%;">
+                                <div style="width: 78%;" *ngIf="!loadingLaps">
                                     <app-loader [component]="'chart'" [visible]="loadingLapChart"></app-loader>
                                     <div fxLayout fxLayoutAlign="space-evenly center">
                                         <div fxLayout fxLayoutAlign="space-evenly">

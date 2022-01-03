@@ -1,0 +1,18 @@
+.error {
+    background-color: #DA4D1A;
+    color: #F6F7EC;
+}
+
+.success {
+    background-color: green;
+    color: #F6F7EC;
+}
+
+.alert {
+    width: fit-content;
+    padding: 0.75rem;
+    border-radius: 10px;
+    margin-bottom: 0.75rem;
+    -webkit-box-shadow: 4px 4px 10px 0px rgba(0,0,0,0.5); 
+    box-shadow: 4px 4px 10px 0px rgba(0,0,0,0.5);
+}

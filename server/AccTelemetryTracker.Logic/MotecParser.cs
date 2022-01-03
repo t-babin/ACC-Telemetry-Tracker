@@ -14,12 +14,49 @@ public class MotecParser : IMotecParser
         _logger = logger;
     }
 
-    // TODO get the rest of the cars
     private readonly Dictionary<string, string> _validCars = new Dictionary<string, string>()
     {
+        { "V12 Vantage GT3", "GT3"},
+        { "V8 Vantage GT3", "GT3"},
+        { "R8 LMS", "GT3" },
         { "R8 LMS EVO", "GT3" },
+        { "Continental 16", "GT3"},
+        { "Continental 18", "GT3"},
+        { "M4 GT3", "GT3"},
+        { "M6 GT3", "GT3"},
+        { "Emil Frey G3", "GT3"},
+        { "488 GT3", "GT3"},
+        { "488 GT3 Evo", "GT3"},
+        { "NSX GT3", "GT3"},
+        { "NSX GT3 EVO", "GT3"},
+        { "Huracan GT3", "GT3"},
+        { "Huracan GT3 EVO", "GT3"},
+        { "RC F GT3", "GT3"},
+        { "McLaren 650S GT3", "GT3"},
+        { "McLaren 720S GT3", "GT3"},
+        { "AMG GT3", "GT3"},
+        { "AMG GT3 Evo", "GT3"},
+        { "GTR GT3 17", "GT3"},
+        { "GTR GT3 18", "GT3"},
+        { "991 GT3 R 2016", "GT3" },
         { "991ii GT3 R EVO", "GT3" },
-        { "488 GT3 Evo", "GT3"}
+        { "Gallardo REX", "GT3" },
+
+        { "A110 GT4", "GT4" },
+        { "V8 Vantage GT4", "GT4" },
+        { "R8 GT4", "GT4" },
+        { "M4 GT4", "GT4" },
+        { "Camaro GT4R", "GT4" },
+        { "G55 GT4", "GT4" },
+        { "XBOW GT4", "GT4" },
+        { "GranTurismo MC GT4", "GT4" },
+        { "570S GT4", "GT4" },
+        { "AMG GT4", "GT4" },
+        { "718 Cayman GT4 MR", "GT4" },
+
+        { "991II GT3 Cup", "Cup" },
+
+        { "Huracan ST", "ST" },
     };
 
     private readonly Dictionary<string, string> _validTracks = new Dictionary<string, string>()

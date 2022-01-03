@@ -1,2 +1,7 @@
-<!-- TODO implement messaging (api responses) -->
-<p>messaging works!</p>
+<div class="container" *ngIf="messagingService.messages.length > 0" fxLayout="column" fxLayoutAlign="space-around center">
+    <div *ngFor="let e of messagingService.messages" [ngClass]="e.type === 'error' ? 'error' : 'success'"
+        class="alert"
+        fxLayout="column" fxLayoutAlign="space-around center">
+        <p>{{ e.message }}</p>
+    </div>
+</div>

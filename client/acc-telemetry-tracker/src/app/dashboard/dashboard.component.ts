@@ -11,6 +11,7 @@ import { AuthenticationService } from '../_services/authentication.service';
 import { saveAs } from 'file-saver';
 
 import * as moment from 'moment';
+import { MessagingService } from '../messaging.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -18,8 +19,8 @@ import * as moment from 'moment';
   styleUrls: ['./dashboard.component.css'],
   animations: [
     trigger('detailExpand', [
-      state('collapsed', style({height: '0px', minHeight: '0'})),
-      state('expanded', style({height: '*'})),
+      state('collapsed', style({ height: '0px', minHeight: '0' })),
+      state('expanded', style({ height: '*' })),
       transition('expanded <=> collapsed', animate('225ms cubic-bezier(0.4, 0.0, 0.2, 1)')),
     ]),
   ]
@@ -44,18 +45,20 @@ export class DashboardComponent implements OnInit {
   carTrackAverage = 0;
   classAverage = 0;
   classBest = 0;
+  downloadId = 0;
+  processingUpload = false;
 
   colorScheme = {
-    domain: [ '#DA4D1A', '#3F599F', '#10152C' ]
+    domain: ['#DA4D1A', '#3F599F', '#10152C']
   };
 
-  constructor(public authService: AuthenticationService, private apiService: ApiService) { }
-  
+  constructor(public authService: AuthenticationService, private apiService: ApiService, private messagingService: MessagingService) { }
+
   ngOnInit(): void {
     if (!this.authService.isAuthorized) {
       this.authService.authorizedCallback();
     }
-    
+
     this.reload();
   }
 
@@ -92,19 +95,26 @@ export class DashboardComponent implements OnInit {
     this.loadingLapChart = true;
     this.selectedFile = file;
     this.apiService.getLaps(file.id)
-      .subscribe(res => {
-        this.laps = res.laps;
-        this.carTrackAverage = res.carTrackAverageLap;
-        this.classAverage = res.classAverageLap;
-        this.classBest = res.classBestLap;
-        this.lapData.push({
-          name: 'Lap Time', series: []
-        });
-        this.laps.forEach(l => this.lapData[0].series.push({ name: `Lap ${l.lapNumber + 1}`, value: l.lapTime, tooltipText: 'test tooltip' }));
-        this.loadingLaps = false;
-        // this.minLapTime = Math.min(...this.laps.map(l => l.lapTime)) - 5;
-        // this.maxLapTime = Math.max(...this.laps.map(l => l.lapTime)) + 5;
-        setTimeout(() => this.loadingLapChart = false, 500);
+      .subscribe({
+        next: (res) => {
+          this.laps = res.laps;
+          this.carTrackAverage = res.carTrackAverageLap;
+          this.classAverage = res.classAverageLap;
+          this.classBest = res.classBestLap;
+          this.lapData.push({
+            name: 'Lap Time', series: []
+          });
+          this.laps.forEach(l => this.lapData[0].series.push({ name: `Lap ${l.lapNumber + 1}`, value: l.lapTime, tooltipText: 'test tooltip' }));
+          this.loadingLaps = false;
+          // this.minLapTime = Math.min(...this.laps.map(l => l.lapTime)) - 5;
+          // this.maxLapTime = Math.max(...this.laps.map(l => l.lapTime)) + 5;
+          setTimeout(() => this.loadingLapChart = false, 500);
+        },
+        error: (e) => {
+          this.loadingLaps = false;
+          this.selectedFile = null;
+          this.laps = [];
+        }
       });
   }
 
@@ -114,30 +124,31 @@ export class DashboardComponent implements OnInit {
     if (file) {
       const formData = new FormData();
       formData.append("file", file);
+      this.processingUpload = true;
 
       this.apiService.uploadFile(formData)
         .subscribe({
           next: (v) => {
-            console.log(v);
+            this.messagingService.pushMessage({ message: `Successfully uploaded ${v.car} / ${v.track} MoTeC data`, type: 'success' });
+            this.processingUpload = false;
+            this.reload();
           },
           error: (e) => {
-            // TODO add error handling
-            console.log('error', e.error.message);
-          },
-          complete: () => {
-            this.reload();
+            this.processingUpload = false;
           }
         });
     }
   }
 
   downloadFile(file: MotecFile): void {
+    this.downloadId = file.id;
     this.apiService.downloadFile(file.id)
       .subscribe({
         next: (n) => {
           console.log(`${file.carName.replace(' ', '-')}_${file.trackName.replace(' ', '-')}_${moment(file.sessionDate).format('yyyy-MM-DD')}.zip`);
           const blob = new Blob([n], { type: 'application/x-zip-compressed' });
           saveAs(blob, `${file.carName.replaceAll(' ', '-')}_${file.trackName.replace(' ', '-')}_${moment(file.sessionDate).format('yyyy-MM-DD')}.zip`);
+          this.downloadId = 0;
         },
       })
   }

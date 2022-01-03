@@ -295,23 +295,29 @@ public class MotecController : ControllerBase
                 catch (IOException ex)
                 {
                     _logger.LogError(ex, ex.Message);
-                    return BadRequest(new { Message = ex.Message });
+                    return BadRequest(new { Message = $"Error uploading file [{System.Web.HttpUtility.HtmlEncode(Path.GetFileName(contentDisposition.FileName.Value))}]: {ex.Message}" });
                 }
                 catch (MotecParseException ex)
                 {
                     _logger.LogError(ex, ex.Message);
-                    return BadRequest(new { Message = ex.Message });
+                    _logger.LogInformation($"Deleting the uploaded file [{savePath}]");
+                    System.IO.File.Delete(savePath);
+                    return BadRequest(new { Message = $"Error uploading file [{System.Web.HttpUtility.HtmlEncode(Path.GetFileName(contentDisposition.FileName.Value))}]: {ex.Message}" });
                 }
                 catch (KeyNotFoundException ex)
                 {
                     _logger.LogError(ex, ex.Message);
-                    return BadRequest(new { Message = ex.Message });
+                    _logger.LogInformation($"Deleting the uploaded file [{savePath}]");
+                    System.IO.File.Delete(savePath);
+                    return BadRequest(new { Message = $"Error uploading file [{System.Web.HttpUtility.HtmlEncode(Path.GetFileName(contentDisposition.FileName.Value))}]: {ex.Message}" });
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError("Unknown exception occurred");
                     _logger.LogError(ex, ex.Message);
-                    return BadRequest(new { Message = ex.Message });
+                    _logger.LogInformation($"Deleting the uploaded file [{savePath}]");
+                    System.IO.File.Delete(savePath);
+                    return BadRequest(new { Message = $"Error uploading file [{System.Web.HttpUtility.HtmlEncode(Path.GetFileName(contentDisposition.FileName.Value))}]: {ex.Message}" });
                 }
                 finally
                 {

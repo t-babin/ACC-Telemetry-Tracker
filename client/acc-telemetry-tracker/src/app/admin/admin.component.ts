@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { MessagingService } from '../messaging.service';
 import { User } from '../_models/user';
 import { ApiService } from '../_services/api.service';
 
@@ -14,14 +15,13 @@ export class AdminComponent implements OnInit {
   original: any[] = [];
   filterValue: string = '';
 
-  constructor(private apiService: ApiService) { }
+  constructor(private apiService: ApiService, private messagingService: MessagingService) { }
 
   ngOnInit(): void {
     this.reload();
   }
 
   reload(): void {
-    console.log('reloading');
     this.loading = true;
     this.original = [];
     this.apiService.getUsers()
@@ -35,7 +35,10 @@ export class AdminComponent implements OnInit {
 
   submitChanges(): void {
     this.apiService.updateUsers(this.users)
-      .subscribe(_ => this.reload());
+      .subscribe(_ => {
+        this.reload();
+        this.messagingService.pushMessage({ message: 'Successfully updated users', type: 'success'});
+      });
   }
 
   hasUpdates(): boolean {

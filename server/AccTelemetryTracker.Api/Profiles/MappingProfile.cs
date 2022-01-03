@@ -27,5 +27,7 @@ public class MappingProfile : Profile
 
         CreateMap<User, UserDto>()
             .ForMember(d => d.FileUploadCount, opt => opt.MapFrom(u => u.MotecFiles.Count));
+
+        CreateMap<Logic.MotecFile, MotecLapDto>();
     }
 }

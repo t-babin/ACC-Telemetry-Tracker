@@ -1,22 +1,13 @@
-/* * { */
-    /* font-family: Roboto,Helvetica Neue Light,Helvetica Neue,Helvetica,Arial,Lucida Grande,sans-serif; */
-    /* font-family: 'Fira Sans Condensed', sans-serif; */
-/* } */
 
 body {
     background-color: #F6F7EC;
-    /* background-color: #EAE7DC; */
 }
 
 p, h1 {
-    /* color: #10152C; */
     margin-bottom: 0 !important;
 }
-/* html, body { height: 100%; } */
 body {
     margin: 0;
-    /* font-family: Roboto, "Helvetica Neue", sans-serif; */
-    /* font-family: 'Fira Sans Condensed', sans-serif; */
 }
 
 .container {
@@ -40,7 +31,11 @@ a {
     background-color: #3F599F;
 }
 
-a:hover {
+.disabled {
+    opacity: 50%;
+}
+
+a:hover:not(.disabled) {
     color: #F6F7EC;
     background-color: #10152C;
     -webkit-box-shadow: 4px 4px 10px 0px rgba(0,0,0,0.5); 

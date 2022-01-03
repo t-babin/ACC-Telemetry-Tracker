@@ -6,7 +6,10 @@
 
             <input type="file" style="display: none;" (change)="onFileSelected($event)"
                 accept="application/x-zip-compressed" #fileUpload>
-            <a (click)="fileUpload.click()">Upload File</a>
+            <a (click)="fileUpload.click()" *ngIf="authService.userValue?.isValid; else disabledUser">Upload File</a>
+            <ng-template #disabledUser>
+                <a class="disabled" matTooltip="Uploading is disabled until you are activated.">Upload File</a>
+            </ng-template>
 
             <div fxLayout="column" style="margin-top: 1.5rem;">
                 <mat-form-field>
@@ -99,8 +102,7 @@
 
                 <ng-container matColumnDef="expandedDetail">
                     <td mat-cell *matCellDef="let element" [attr.colspan]="9">
-                        <div class="example-element-detail"
-                            [@detailExpand]="element == selectedFile ? 'expanded' : 'collapsed'">
+                        <div class="example-element-detail" [@detailExpand]="element == selectedFile ? 'expanded' : 'collapsed'">
                             <div fxLayout style="width: 100%; max-height: 460px;" *ngIf="!loadingLaps">
                                 <div style="overflow: auto; max-height: 450px; width: 20%; margin: 0px 1rem 1rem 1rem;">
                                     <table mat-table [dataSource]="laps" style="width: 94%; margin-left: 1%;">
@@ -108,15 +110,13 @@
                                         <ng-container matColumnDef="lapNumber">
                                             <th mat-header-cell *matHeaderCellDef>Lap</th>
                                             <td mat-cell *matCellDef="let element"
-                                                [ngClass]="fastest(element) ? 'fastest' : ''">{{ element.lapNumber + 1
-                                                }}</td>
+                                                [ngClass]="fastest(element) ? 'fastest' : ''">{{ element.lapNumber + 1 }}</td>
                                         </ng-container>
 
                                         <ng-container matColumnDef="lapTime">
                                             <th mat-header-cell *matHeaderCellDef>Lap Time</th>
                                             <td mat-cell *matCellDef="let element"
-                                                [ngClass]="fastest(element) ? 'fastest' : ''">{{ element.lapTime | time
-                                                }}</td>
+                                                [ngClass]="fastest(element) ? 'fastest' : ''">{{ element.lapTime | time }}</td>
                                         </ng-container>
 
                                         <tr mat-header-row *matHeaderRowDef="['lapNumber', 'lapTime']; sticky: true">
@@ -128,19 +128,95 @@
 
                                 <div style="width: 78%;">
                                     <app-loader [component]="'chart'" [visible]="loadingLapChart"></app-loader>
-                                    <ngx-charts-line-chart *ngIf="!loadingLapChart" [xAxisLabel]="'Lap'"
-                                        [yAxisLabel]="'Lap Time'" [showYAxisLabel]="true" [results]="lapData"
-                                        [xAxis]="true" [showGridLines]="true" [autoScale]="true">
+                                    <div fxLayout fxLayoutAlign="space-evenly center">
+                                        <div fxLayout fxLayoutAlign="space-evenly">
+                                            <p>Car/Track Average: </p>
+                                            <p>{{ carTrackAverage | time }}</p>
+                                            <div style="margin-left: 5px;" *ngIf="fastestLap() === carTrackAverage">
+                                                --
+                                            </div>
+                                            <div style="margin-left: 5px;" *ngIf="fastestLap() > carTrackAverage" fxLayout class="slower">
+                                                <p>+{{ fastestLap() - carTrackAverage | time: '' }}</p>
+                                                <mat-icon style="font-size: 12pt;">trending_down</mat-icon>
+                                            </div>
+                                            <div style="margin-left: 5px;" *ngIf="fastestLap() < carTrackAverage" fxLayout class="faster">
+                                                <p>-{{ carTrackAverage - fastestLap() | time: '' }}</p>
+                                                <mat-icon style="font-size: 12pt;">trending_up</mat-icon>
+                                            </div>
+                                        </div>
+                                        <div fxLayout fxLayoutAlign="space-evenly">
+                                            <p>Class Average: </p>
+                                            <p>{{ classAverage | time }}</p>
+                                            <div style="margin-left: 5px;" *ngIf="fastestLap() === classAverage">
+                                                --
+                                            </div>
+                                            <div style="margin-left: 5px;" *ngIf="fastestLap() > classAverage" fxLayout class="slower">
+                                                <p>+{{ fastestLap() - classAverage | time: '' }}</p>
+                                                <mat-icon style="font-size: 12pt;">trending_down</mat-icon>
+                                            </div>
+                                            <div style="margin-left: 5px;" *ngIf="fastestLap() < classAverage" fxLayout class="faster">
+                                                <p>-{{ classAverage - fastestLap() | time: '' }}</p>
+                                                <mat-icon style="font-size: 12pt;">trending_up</mat-icon>
+                                            </div>
+                                        </div>
+                                        <div fxLayout fxLayoutAlign="space-evenly">
+                                            <p>Class Best: </p>
+                                            <p>{{ classBest | time }}</p>
+                                            <div style="margin-left: 5px;" *ngIf="fastestLap() === classBest">
+                                                --
+                                            </div>
+                                            <div style="margin-left: 5px;" *ngIf="fastestLap() > classBest" fxLayout class="slower">
+                                                <p>+{{ fastestLap() - classBest | time: '' }}</p>
+                                                <mat-icon style="font-size: 12pt;">trending_down</mat-icon>
+                                            </div>
+                                            <div style="margin-left: 5px;" *ngIf="fastestLap() < classBest" fxLayout class="faster">
+                                                <p>-{{ classBest - fastestLap() | time: '' }}</p>
+                                                <mat-icon style="font-size: 12pt;">trending_up</mat-icon>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <ngx-charts-line-chart *ngIf="!loadingLapChart"
+                                        [xAxisLabel]="'Lap'"
+                                        [yAxisLabel]="'Lap Time'"
+                                        [showYAxisLabel]="true"
+                                        [results]="lapData"
+                                        [xAxis]="true"
+                                        [showGridLines]="true"
+                                        [autoScale]="true">
                                         <!-- [yScaleMin]="minLapTime"
                                         [yScaleMax]="maxLapTime" -->
                                         <!-- [scheme]="colorScheme" -->
                                         <ng-template #tooltipTemplate let-model="model">
                                             <h2 style="color: white; margin-bottom: 0;">{{ model.name }}</h2>
                                             <h3>{{ model.value | time }}</h3>
+                                            <h5 style="margin-bottom: 0;">Compared to Car/Track Average</h5>
+                                            <div style="text-align: center;" *ngIf="carTrackAverage === model.value">
+                                                --
+                                            </div>
+                                            <div style="text-align: center;" *ngIf="carTrackAverage > model.value" fxLayout fxLayoutAlign="center center" class="faster">
+                                                <h4 style="margin-bottom: 0;">-{{ carTrackAverage - model.value | time: '' }}</h4>
+                                                <mat-icon style="font-size: 12pt;">trending_down</mat-icon>
+                                            </div>
+                                            <div style="text-align: center;" *ngIf="carTrackAverage < model.value" fxLayout fxLayoutAlign="center center" class="slower">
+                                                <h4 style="margin-bottom: 0;">+{{ model.value - carTrackAverage | time: '' }}</h4>
+                                                <mat-icon style="font-size: 12pt;">trending_up</mat-icon>
+                                            </div>
                                         </ng-template>
                                         <ng-template #seriesTooltipTemplate let-model="model">
                                             <h2 style="color: white; margin-bottom: 0;">{{ model[0].name }}</h2>
                                             <h3>{{ model[0].value | time }}</h3>
+                                            <h5 style="margin-bottom: 0;">Compared to Car/Track Average</h5>
+                                            <div style="text-align: center;" *ngIf="carTrackAverage === model[0].value">
+                                                --
+                                            </div>
+                                            <div style="text-align: center;" *ngIf="carTrackAverage > model[0].value" fxLayout fxLayoutAlign="center center" class="faster">
+                                                <h4 style="margin-bottom: 0;">-{{ carTrackAverage - model[0].value | time: '' }}</h4>
+                                                <mat-icon style="font-size: 12pt;">trending_down</mat-icon>
+                                            </div>
+                                            <div style="text-align: center;" *ngIf="carTrackAverage < model[0].value" fxLayout fxLayoutAlign="center center" class="slower">
+                                                <h4 style="margin-bottom: 0;">+{{ model[0].value - carTrackAverage | time: '' }}</h4>
+                                                <mat-icon style="font-size: 12pt;">trending_up</mat-icon>
+                                            </div>
                                         </ng-template>
                                     </ngx-charts-line-chart>
                                 </div>

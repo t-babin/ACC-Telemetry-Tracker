@@ -15,15 +15,8 @@ export class ErrorInterceptor implements HttpInterceptor {
               if (requestError.status !== 401) {
                 const { error } = requestError;
                 console.log('error from interceptor', error);
-                // this.messageService.add({
-                //   severity: 'error',
-                //   summary: `HTTP Error - ${requestError.status}`,
-                //   detail: error && error.message,
-                // });
               } else {
-                console.log('unauth');
-                this.authService.logout();
-                //   return EMPTY;
+                this.authService.logout(true);
               }
               return throwError(() => new Error(requestError));
             })

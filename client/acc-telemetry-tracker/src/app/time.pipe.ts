@@ -16,7 +16,11 @@ export class TimePipe implements PipeTransform {
     const milliseconds = ((value - (minutes * 60) - seconds) * 1000).toFixed(0);
 
     // 1:53.849
-    return `${minutes}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padEnd(3, '0')}`;
+    if (args.length === 0) {
+      return `${minutes}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
+    } else {
+      return `${seconds.toString().padStart(1, '0')}.${milliseconds.toString().padStart(3, '0')}`;
+    }
   }
 
 }

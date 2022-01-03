@@ -16,3 +16,10 @@ export interface MotecLap {
     lapTime: number;
     sessionTime: number;
 }
+
+export interface MotecLaps {
+    carTrackAverageLap: number;
+    classAverageLap: number;
+    classBestLap: number;
+    laps: MotecLap[];
+}

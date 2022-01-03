@@ -355,6 +355,38 @@ public class MotecController : ControllerBase
             return NotFound();
         }
 
+        return Ok(_mapper.Map<MotecFileDto>(motecFromDb));
+    }
+
+    /// <summary>
+    /// Returns the info for the specified motec file
+    /// </summary>
+    /// <param name="id">The motec file ID to get</param>
+    /// <returns></returns>
+    [HttpGet("laps/{id}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> GetMotecFileLaps(int id)
+    {
+        if (id < 1)
+        {
+            _logger.LogError($"Tried getting laps from file ID [{id}]");
+            return BadRequest();
+        }
+
+        var motecFromDb = await _context.MotecFiles
+            .AsNoTracking()
+            .Include(m => m.Car)
+            .Include(m => m.Track)
+            .FirstOrDefaultAsync(m => m.Id == id);
+
+        if (motecFromDb is null)
+        {
+            _logger.LogError($"The motec file with id [{id}] could not be found");
+            return NotFound();
+        }
+
         if (!System.IO.File.Exists(Path.Combine(_storagePage, motecFromDb.FileLocation)))
         {
             _logger.LogError($"The motec file [{motecFromDb.FileLocation}] could not be found on disk");
@@ -366,8 +398,19 @@ public class MotecController : ControllerBase
         {
             ZipFile.ExtractToDirectory(Path.Combine(_storagePage, motecFromDb.FileLocation), tempDir.FullName);
             var motecFile = await _parser.ParseFilesAsync(Directory.GetFiles(tempDir.FullName));
-            var mapped = _mapper.Map<MotecFileDto>(motecFromDb);
-            mapped.Laps = motecFile.Laps;
+            var mapped = _mapper.Map<MotecLapDto>(motecFile);
+            var comboAverage = await _context.AverageLaps.FirstOrDefaultAsync(a => a.CarId == motecFromDb.CarId && a.TrackId == motecFromDb.TrackId);
+            _logger.LogInformation($"Car + track average fastest lap: [{comboAverage!.AverageFastestLap}]");
+            var classAverage = await _context.AverageLaps.Where(a => a.TrackId == motecFromDb.TrackId).AverageAsync(a => a.AverageFastestLap);
+            _logger.LogInformation($"Class average fastest lap: [{classAverage}]");
+            var classFastest = await _context.MotecFiles
+                .Include(m => m.Car)
+                .Where(m => m.TrackId == motecFromDb.TrackId && m.Car.Class.Equals(motecFromDb.Car.Class))
+                .MinAsync(m => m.FastestLap);
+            _logger.LogInformation($"Class fastest lap: [{classFastest}]");
+            mapped.CarTrackAverageLap = comboAverage!.AverageFastestLap;
+            mapped.ClassAverageLap = classAverage;
+            mapped.ClassBestLap = classFastest;
 
             return Ok(mapped);
         }

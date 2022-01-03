@@ -41,6 +41,9 @@ export class DashboardComponent implements OnInit {
   fileCount = 0;
   pageSize = 20;
   currentPage = 0;
+  carTrackAverage = 0;
+  classAverage = 0;
+  classBest = 0;
 
   colorScheme = {
     domain: [ '#DA4D1A', '#3F599F', '#10152C' ]
@@ -91,6 +94,9 @@ export class DashboardComponent implements OnInit {
     this.apiService.getLaps(file.id)
       .subscribe(res => {
         this.laps = res.laps;
+        this.carTrackAverage = res.carTrackAverageLap;
+        this.classAverage = res.classAverageLap;
+        this.classBest = res.classBestLap;
         this.lapData.push({
           name: 'Lap Time', series: []
         });
@@ -141,7 +147,11 @@ export class DashboardComponent implements OnInit {
   }
 
   fastest(lap: MotecLap): boolean {
-    return  Math.min(...this.laps.map(l => l.lapTime)) === lap.lapTime;
+    return Math.min(...this.laps.map(l => l.lapTime)) === lap.lapTime;
+  }
+
+  fastestLap(): number {
+    return Math.min(...this.laps.map(l => l.lapTime));
   }
 
   page(value: { currentPage: number, pageSize: number }): void {

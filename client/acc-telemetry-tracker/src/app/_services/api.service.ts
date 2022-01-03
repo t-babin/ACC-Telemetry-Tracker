@@ -3,7 +3,7 @@ import { Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { environment } from "src/environments/environment";
 import { Car } from "../_models/car";
-import { MotecFile } from "../_models/motecFile";
+import { MotecFile, MotecLaps } from "../_models/motecFile";
 import { Track } from "../_models/track";
 import { User } from "../_models/user";
 
@@ -35,8 +35,12 @@ export class ApiService {
         return this.httpClient.get<MotecFile[]>(`${this.API_BASE_URL}/api/motec`, { params: params });
     }
 
-    getLaps(id: number): Observable<MotecFile> {
+    getSingleFile(id: number): Observable<MotecFile> {
         return this.httpClient.get<MotecFile>(`${this.API_BASE_URL}/api/motec/${id}`);
+    }
+
+    getLaps(id: number): Observable<MotecLaps> {
+        return this.httpClient.get<MotecLaps>(`${this.API_BASE_URL}/api/motec/laps/${id}`);
     }
 
     getCars(): Observable<Car[]> {

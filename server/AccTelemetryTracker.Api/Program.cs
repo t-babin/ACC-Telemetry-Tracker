@@ -1,5 +1,6 @@
 using AccTelemetryTracker.Api.Middleware;
 using AccTelemetryTracker.Datastore;
+using AccTelemetryTracker.Datastore.Models;
 using AccTelemetryTracker.Logic;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
@@ -29,6 +30,20 @@ try
     var databaseUser = builder.Configuration.GetValue<string>("DATABASE_USER");
     var databasePassword = builder.Configuration.GetValue<string>("DATABASE_PASSWORD");
     var sqliteDatabase = builder.Configuration.GetValue<string>("SQLITE_DATABASE");
+    var adminUsers = builder.Configuration.GetValue<string>("ADMIN_USERS").Split(",");
+
+    if (!adminUsers.Any())
+    {
+        throw new KeyNotFoundException("At least one discord user ID in the ADMIN_USERS variable must be provided");
+    }
+    else if (!adminUsers.Select(u => long.TryParse(u, out _)).All(u => u == true))
+    {
+        throw new KeyNotFoundException("At least one valid discord user ID in the ADMIN_USERS variable must be provided");
+    }
+    else
+    {
+        adminUsers = adminUsers.Distinct().ToArray();
+    }
 
     if (new [] { databaseHost, databaseName, databaseUser, databasePassword }.Any(s => string.IsNullOrEmpty(s)))
     {
@@ -44,7 +59,6 @@ try
         {
             Log.Information("Connecting to a dockerized database");
             var connectionString = $"server={databaseHost};database={databaseName};user={databaseUser};password={databasePassword};";
-            // var version = ServerVersion.AutoDetect(connectionString);
             builder.Services.AddDbContext<AccTelemetryTrackerContext>(x => x.UseMySql(connectionString, new MySqlServerVersion(new Version(5, 7, 34)), options =>
                 options.EnableRetryOnFailure(
                     maxRetryCount: 10,
@@ -101,7 +115,7 @@ try
             builder =>
             {
                 builder
-                    .SetIsOriginAllowed((host) => true)
+                    .WithOrigins("http://localhost:4200")
                     .AllowAnyHeader()
                     .AllowAnyMethod()
                     .AllowCredentials();
@@ -110,6 +124,30 @@ try
 
     var app = builder.Build();
     
+    var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AccTelemetryTrackerContext>();
+    if (!string.IsNullOrEmpty(sqliteDatabase))
+    {
+        await db.Database.EnsureCreatedAsync();
+    }
+    var existingAdmins = await db.Users.Where(u => adminUsers.Contains(u.Id.ToString())).ToListAsync();
+    if (existingAdmins.Any())
+    {
+        Log.Information($"Found [{existingAdmins.Count}] admin users. Ensuring their roles are 'admin' and they are activated...");
+        foreach (var admin in existingAdmins)
+        {
+            Log.Information($"Updating admin [{admin.Id.ToString()}]");
+            admin.Role = "admin";
+            admin.IsValid = true;
+        }
+        await db.SaveChangesAsync();
+    }
+    else
+    {
+        Log.Information($"Adding [{adminUsers.Length}] admin users");
+        db.Users.AddRange(adminUsers.Select(u => new User { Id = long.Parse(u), IsValid = true, Role = "admin", SignupDate = DateTime.Now }));
+        await db.SaveChangesAsync();
+    }
 
     app.UseSerilogRequestLogging();
 

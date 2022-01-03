@@ -53,7 +53,10 @@ public class AuthController : ControllerBase
             {
                 var response = await client.SendAsync(request);
                 var authContent = await response.Content.ReadAsStringAsync();
-                _logger.LogInformation(authContent);
+                if (response.StatusCode != System.Net.HttpStatusCode.OK)
+                {
+                    _logger.LogInformation(authContent);
+                }
                 response.EnsureSuccessStatusCode();
                 _logger.LogInformation("Got token from discord API");
                 var asJson = JsonDocument.Parse(authContent).RootElement;
@@ -112,6 +115,12 @@ public class AuthController : ControllerBase
 
                     _logger.LogInformation($"Adding new user [{JsonSerializer.Serialize<User>(user)}]");
                     _context.Users.Add(user);
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    user.ServerName = serverName;
+                    user.Username = userInfoJson.GetProperty("username").GetString();
                     await _context.SaveChangesAsync();
                 }
 

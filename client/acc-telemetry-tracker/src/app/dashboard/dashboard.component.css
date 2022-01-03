@@ -24,12 +24,20 @@ tr.example-detail-row {
 }
 
 .fastest {
-	font-weight: bold !important;
+	font-weight: 500 !important;
 }
 
 .fastest-row {
-	border: solid 1px green;
+	border: solid 2px green;
 	border-radius: 5px;
+}
+
+.faster {
+	color: green;
+}
+
+.slower {
+	color: #DA4D1A;
 }
 
 table {

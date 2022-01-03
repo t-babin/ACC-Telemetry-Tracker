@@ -25,12 +25,35 @@ try
     builder.Services.AddControllers();
 
     var frontendUrl = builder.Configuration.GetValue<string>("FRONTEND_URL");
+    Log.Information($"Read variable FRONTEND_URL: [{frontendUrl}]");
+
     var databaseHost = builder.Configuration.GetValue<string>("DATABASE_HOST");
+    Log.Information($"Read variable DATABASE_HOST: [{databaseHost}]");
+
     var databaseName = builder.Configuration.GetValue<string>("DATABASE_NAME");
+    Log.Information($"Read variable DATABASE_NAME: [{databaseName}]");
+
     var databaseUser = builder.Configuration.GetValue<string>("DATABASE_USER");
+    Log.Information($"Read variable DATABASE_USER: [{databaseUser}]");
+
     var databasePassword = builder.Configuration.GetValue<string>("DATABASE_PASSWORD");
+    Log.Information($"Read variable DATABASE_PASSWORD: [{databasePassword}]");
+
     var sqliteDatabase = builder.Configuration.GetValue<string>("SQLITE_DATABASE");
+    Log.Information($"Read variable SQLITE_DATABASE: [{sqliteDatabase}]");
+
+    var adminUsersString = builder.Configuration.GetValue<string>("ADMIN_USERS");
+    Log.Information($"Read variable ADMIN_USERS: [{adminUsersString}]");
+
     var adminUsers = builder.Configuration.GetValue<string>("ADMIN_USERS").Split(",");
+    var slow = builder.Configuration.GetValue<string>("SLOWMODE");
+    Log.Information($"Read variable SLOWMODE: [{slow}]");
+
+    if (!string.IsNullOrEmpty(slow))
+    {
+        Log.Information("slow startup, waiting before proceeding");
+        await Task.Delay(35000);
+    }
 
     if (!adminUsers.Any())
     {

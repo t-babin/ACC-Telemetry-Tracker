@@ -9,7 +9,7 @@
             <div fxLayout="column" *ngIf="authService.userValue?.isValid; else disabledUser">
                 <a (click)="fileUpload.click()" *ngIf="!processingUpload; else processing">Upload File</a>
                 <ng-template #processing>
-                    <a class="disabled">Upload File</a>
+                    <app-loader [visible]="processingUpload" component="upload"></app-loader>
                 </ng-template>
             </div>
             <ng-template #disabledUser>

@@ -47,7 +47,6 @@ export class AdminComponent implements OnInit {
           signupDate: r.signupDate, fileUploadCount: r.fileUploadCount }));
         
         this.audit = res.audit;
-        console.log(this.audit);
         this.loading = false;
       });
   }

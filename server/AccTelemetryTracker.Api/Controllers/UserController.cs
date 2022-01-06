@@ -68,6 +68,7 @@ public class UserController : ControllerBase
             return Unauthorized();
         }
         
+        var modifiedUsers = new List<long>();
         foreach (var user in users.Users)
         {
             var fromDb = await _context.Users.FirstOrDefaultAsync(u => u.Id == long.Parse(user.Id));
@@ -77,14 +78,10 @@ public class UserController : ControllerBase
                 return NotFound();
             }
 
-            if (!fromDb.Role.Equals(user.Role))
+            if (!fromDb.Role.Equals(user.Role) || fromDb.IsValid != user.IsValid)
             {
                 fromDb.Role = user.Role;
-            }
-
-            if (fromDb.IsValid != user.IsValid)
-            {
-                fromDb.IsValid = user.IsValid;
+                modifiedUsers.Add(fromDb.Id);
             }
         }
 
@@ -92,7 +89,7 @@ public class UserController : ControllerBase
         {
             await _context.SaveChangesAsync();
 
-            await _auditRepo.PostAuditEvent(EventType.DownloadFile, userId, $"Updated users: [{string.Join(",", users.Users.Select(u => u.Id))}]");
+            await _auditRepo.PostAuditEvent(EventType.ModifyUser, userId, $"Updated users: [{string.Join(",", modifiedUsers)}]");
         }
 
         return Ok();

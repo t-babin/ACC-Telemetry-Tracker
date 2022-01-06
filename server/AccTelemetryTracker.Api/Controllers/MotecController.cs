@@ -455,6 +455,7 @@ public class MotecController : ControllerBase
         }
         catch (MotecParseException ex)
         {
+            _logger.LogError(ex, ex.Message);
             return BadRequest(new { Message = ex.Message });
         }
         finally

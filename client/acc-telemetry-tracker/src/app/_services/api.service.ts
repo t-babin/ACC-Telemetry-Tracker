@@ -2,8 +2,9 @@ import { HttpClient, HttpParams } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { environment } from "src/environments/environment";
+import { Audit } from "../_models/audit";
 import { Car } from "../_models/car";
-import { MotecFile, MotecLaps } from "../_models/motecFile";
+import { MotecFile, MotecLaps, MotecLapStat, MotecStat } from "../_models/motecFile";
 import { Track } from "../_models/track";
 import { User } from "../_models/user";
 
@@ -51,6 +52,18 @@ export class ApiService {
         return this.httpClient.get<Track[]>(`${this.API_BASE_URL}/api/motec/tracks`);
     }
 
+    getMotecStats(): Observable<MotecStat[]> {
+        return this.httpClient.get<MotecStat[]>(`${this.API_BASE_URL}/api/motec/stats`);
+    }
+
+    getMotecAverageTrackStats(trackId: number): Observable<MotecLapStat[]> {
+        return this.httpClient.get<MotecLapStat[]>(`${this.API_BASE_URL}/api/motec/stats/track/average/${trackId}`);
+    }
+
+    getMotecFastestTrackStats(trackId: number): Observable<any[]> {
+        return this.httpClient.get<any[]>(`${this.API_BASE_URL}/api/motec/stats/track/fastest/${trackId}`);
+    }
+
     getUsers(): Observable<User[]> {
         return this.httpClient.get<User[]>(`${this.API_BASE_URL}/api/user`);
     }
@@ -78,5 +91,9 @@ export class ApiService {
         let params = new HttpParams();
         params = params.append('code', code);
         return this.httpClient.get<any>(`${this.API_BASE_URL}/api/auth/callback`, { params: params });
+    }
+
+    getAuditLog(): Observable<Audit[]> {
+        return this.httpClient.get<Audit[]>(`${this.API_BASE_URL}/api/audit`);
     }
 }

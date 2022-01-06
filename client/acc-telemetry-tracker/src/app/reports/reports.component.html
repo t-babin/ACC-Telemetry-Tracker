@@ -1,0 +1,80 @@
+<div fxLayout style="margin-top: 1rem;">
+    <mat-icon *ngIf="!metricsMinimized; else showMetrics" class="clickable" style="margin-top: 5px;" (click)="changeMetricsVisibility()">keyboard_arrow_up</mat-icon>
+    <ng-template #showMetrics>
+        <mat-icon class="clickable" style="margin-top: 5px;" (click)="changeMetricsVisibility()">keyboard_arrow_down</mat-icon>
+    </ng-template>
+    <h3 (click)="changeMetricsVisibility()" class="clickable" style="margin-bottom: 0;">Additional Metrics</h3>
+</div>
+<div [@shown]="metricsMinimized" style="overflow: hidden">
+    <div class="container-sm" style="text-align: center;">
+        <div fxLayout fxLayoutAlign=" start">
+            <app-loader component="metrics" [visible]="loadingStats"></app-loader>
+            <div style="width: 100%;" *ngIf="stats.length > 0 && !loadingStats">
+                <mat-tab-group dynamicHeight (selectedTabChange)="tabChanged($event)">
+                    <mat-tab label="Overall Breakdown">
+                        <div class="chart-container">
+                            <app-loader component="chart" [visible]="loadingBreakdownChart"></app-loader>
+                            <ngx-charts-bar-horizontal-2d *ngIf="!loadingBreakdownChart"
+                                [results]="overallBreakdownData"
+                                [scheme]="colourScheme"
+                                [yAxis]="true"
+                                [xAxis]="true"
+                                [xAxisLabel]="'Number of Files Uploaded'"
+                                [showXAxisLabel]="true"
+                                [barPadding]="5"
+                                [groupPadding]="10"
+                                [legend]="true">
+                            </ngx-charts-bar-horizontal-2d>
+                        </div>
+                    </mat-tab>
+                    <mat-tab label="Track Breakdown">
+                        <ng-template matTabContent>
+                            <mat-tab-group dynamicHeight (selectedTabChange)="tabChanged($event)"
+                                [(selectedIndex)]="selectedTrackIndex">
+                                <mat-tab *ngFor="let track of getTracks()" [label]="track">
+                                    <div class="chart-container">
+                                        <app-loader component="chart" [visible]="loadingTrackChart"></app-loader>
+                                        <ngx-charts-line-chart *ngIf="!loadingTrackChart"
+                                            [xAxisLabel]="'Lap'"
+                                            [results]="averageLapData"
+                                            [xAxis]="true"
+                                            [yAxis]="true"
+                                            [showGridLines]="true"
+                                            [scheme]="colourScheme"
+                                            [yAxisTickFormatting]="yAxisTickFormatting"
+                                            [legend]="true"
+                                            [autoScale]="true">
+                                            <ng-template #tooltipTemplate let-model="model">
+                                                <h2 style="color: white; margin-bottom: 0;">{{ model.name }}</h2>
+                                                <h3>{{ model.value | time }}</h3>
+                                            </ng-template>
+                                            <ng-template #seriesTooltipTemplate let-model="model">
+                                                <h2 style="color: white; margin-bottom: 0;">{{ model[0].name }}</h2>
+                                                <h3 style="margin-bottom: 0;">Average Fastest: {{ model[0].value | time }}</h3>
+                                                <h3 style="margin-bottom: 0;">Overall Fastest: {{ model[1].value | time }}</h3>
+                                                <div fxLayout fxLayoutAlign="center center" class="center">
+                                                    <h5 style="margin-bottom: 0; margin-right: 4px;">Gap: </h5>
+                                                    <div class="center" *ngIf="model[1].value === model[0].value">
+                                                        --
+                                                    </div>
+                                                    <div class="center" *ngIf="model[1].value > model[0].value" fxLayout fxLayoutAlign="center center" class="faster">
+                                                        <h4 style="margin-bottom: 0;">-{{ model[1].value - model[0].value | time: '' }}</h4>
+                                                        <mat-icon style="font-size: 11pt; margin-top: 2px;">trending_down</mat-icon>
+                                                    </div>
+                                                    <div class="center" *ngIf="model[1].value < model[0].value" fxLayout fxLayoutAlign="center center" class="slower">
+                                                        <h4 style="margin-bottom: 0;">+{{ model[0].value - model[1].value | time: '' }}</h4>
+                                                        <mat-icon style="font-size: 11pt; margin-top: 2px;">trending_up</mat-icon>
+                                                    </div>
+                                                </div>
+                                            </ng-template>
+                                        </ngx-charts-line-chart>
+                                    </div>
+                                </mat-tab>
+                            </mat-tab-group>
+                        </ng-template>
+                    </mat-tab>
+                </mat-tab-group>
+            </div>
+        </div>
+    </div>
+</div>

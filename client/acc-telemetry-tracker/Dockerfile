@@ -13,9 +13,6 @@ COPY . .
 
 RUN npm install -g @angular/cli
 
-# RUN apk add gettext \
-#     && envsubst < src/environments/environment.template.ts > src/environments/environment.ts
-
 RUN ng build --configuration production --output-path=/dist
 
 ################

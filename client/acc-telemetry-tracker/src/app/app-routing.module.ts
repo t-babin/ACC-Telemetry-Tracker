@@ -8,7 +8,6 @@ import { PageNotFoundComponent } from './pagenotfound/pagenotfound.component';
 import { UnauthorizedComponent } from './unauthorized/unauthorized.component';
 
 const routes: Routes = [
-  // TODO reporting page
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   { path: 'dashboard', component: DashboardComponent },

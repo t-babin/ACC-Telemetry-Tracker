@@ -1,6 +1,14 @@
 version: '3.3'
 
 services:
+  proxy:
+    build:
+      context: ./proxy
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - 8345:80
+
   frontend:
     build:
       context: ./client/acc-telemetry-tracker
@@ -9,17 +17,16 @@ services:
       - api
     restart: always
     environment:
-      API_URL: http://api
-      DISCORD_CLIENT_ID: 
-    ports:
-      - 8345:80
+      API_URL:
+      DISCORD_CLIENT_ID: 12345
   
   database:
     build:
       context: ./datastore
       dockerfile: Dockerfile
     volumes:
-      - db_data:/var/lib/mysql
+      - /some/database/file/path:/var/lib/mysql
+      #- db_data:/var/lib/mysql
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: super-secure-root-password
@@ -41,11 +48,18 @@ services:
       DATABASE_PASSWORD: acc_password
       DISCORD_CLIENT_ID: 
       DISCORD_CLIENT_SECRET: 
-      DISCORD_GUILD_ID: 
+      DISCORD_GUILD_ID: 98765
       STORAGE_PATH: /motec
-      FRONTEND_URL: http://frontend:8345
+      FRONTEND_URL: http://full-front-end-url
+      ADMIN_USERS: 12345,56789
     ports:
       - 8346:80
+    volumes:
+      - /some/motec/path:/motec
+      # next one is optional
+      - /some/log/path:/app/logs
 
-volumes:
-  db_data:
+
+# you can use this type of mount if you want instead
+#volumes:
+#  db_data:

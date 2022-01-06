@@ -1,5 +1,5 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
-import { Component, OnInit } from '@angular/core';
+import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { Car } from '../_models/car';
@@ -12,6 +12,8 @@ import { saveAs } from 'file-saver';
 
 import * as moment from 'moment';
 import { MessagingService } from '../messaging.service';
+import { TimePipe } from '../time.pipe';
+import { ReportsComponent } from '../reports/reports.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -25,7 +27,7 @@ import { MessagingService } from '../messaging.service';
     ]),
   ]
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, AfterViewInit {
   motecFiles: MotecFile[] = [];
   cars: Car[] = [];
   selectedCars = new FormControl();
@@ -47,18 +49,27 @@ export class DashboardComponent implements OnInit {
   classBest = 0;
   downloadId = 0;
   processingUpload = false;
+  referenceLines: any[] = [];
+
+  @ViewChild(ReportsComponent)
+  reports!: ReportsComponent;
 
   colorScheme = {
     domain: ['#DA4D1A', '#3F599F', '#10152C']
   };
 
-  constructor(public authService: AuthenticationService, private apiService: ApiService, private messagingService: MessagingService) { }
+  yAxisTickFormatting = (value: any) => this.timePipe.transform(value);
+
+  constructor(public authService: AuthenticationService, private apiService: ApiService, private messagingService: MessagingService,
+    private timePipe: TimePipe) { }
 
   ngOnInit(): void {
     if (!this.authService.isAuthorized) {
       this.authService.authorizedCallback();
     }
+  }
 
+  ngAfterViewInit(): void {
     this.reload();
   }
 
@@ -78,6 +89,7 @@ export class DashboardComponent implements OnInit {
         this.tracks = value.tracks;
         this.users = value.users;
         this.fileCount = value.count;
+        this.reports.getChartData();
         this.loadingFiles = false;
       },
       error: (e) => console.log(e)
@@ -86,6 +98,7 @@ export class DashboardComponent implements OnInit {
 
   showLaps(file: MotecFile): void {
     this.lapData = [];
+    this.referenceLines = [];
     if (this.selectedFile === file) {
       this.selectedFile = null;
       this.laps = [];
@@ -104,7 +117,11 @@ export class DashboardComponent implements OnInit {
           this.lapData.push({
             name: 'Lap Time', series: []
           });
-          this.laps.forEach(l => this.lapData[0].series.push({ name: `Lap ${l.lapNumber + 1}`, value: l.lapTime, tooltipText: 'test tooltip' }));
+          this.laps.forEach(l => this.lapData[0].series.push({ name: `Lap ${l.lapNumber + 1}`, value: l.lapTime }));
+          this.referenceLines.push({ name: `Car/Track Average Fastest Lap: ${this.timePipe.transform(this.carTrackAverage)}`, value: this.carTrackAverage });
+          if (this.classAverage !== this.carTrackAverage) {
+            this.referenceLines.push({ name: `Class Average Fastest Lap: ${this.timePipe.transform(this.classAverage)}`, value: this.classAverage });
+          }
           this.loadingLaps = false;
           // this.minLapTime = Math.min(...this.laps.map(l => l.lapTime)) - 5;
           // this.maxLapTime = Math.max(...this.laps.map(l => l.lapTime)) + 5;
@@ -145,7 +162,6 @@ export class DashboardComponent implements OnInit {
     this.apiService.downloadFile(file.id)
       .subscribe({
         next: (n) => {
-          console.log(`${file.carName.replace(' ', '-')}_${file.trackName.replace(' ', '-')}_${moment(file.sessionDate).format('yyyy-MM-DD')}.zip`);
           const blob = new Blob([n], { type: 'application/x-zip-compressed' });
           saveAs(blob, `${file.carName.replaceAll(' ', '-')}_${file.trackName.replace(' ', '-')}_${moment(file.sessionDate).format('yyyy-MM-DD')}.zip`);
           this.downloadId = 0;
@@ -163,6 +179,10 @@ export class DashboardComponent implements OnInit {
 
   fastestLap(): number {
     return Math.min(...this.laps.map(l => l.lapTime));
+  }
+
+  slowestLap(): number {
+    return Math.max(...this.laps.map(l => l.lapTime));
   }
 
   page(value: { currentPage: number, pageSize: number }): void {

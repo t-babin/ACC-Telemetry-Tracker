@@ -23,3 +23,14 @@ export interface MotecLaps {
     classBestLap: number;
     laps: MotecLap[];
 }
+
+export interface MotecStat {
+    car: string;
+    carId: number;
+    track: string;
+    trackId: number;
+}
+
+export interface MotecLapStat extends MotecStat {
+    fastestLap: number;
+}

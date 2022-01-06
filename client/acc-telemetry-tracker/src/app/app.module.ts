@@ -12,7 +12,9 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatInputModule } from '@angular/material/input';
+import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDividerModule } from '@angular/material/divider'; 
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 
 import { AppRoutingModule } from './app-routing.module';
@@ -31,6 +33,7 @@ import { MessagingComponent } from './messaging/messaging.component';
 import { PaginatorComponent } from './paginator/paginator.component';
 import { UnauthorizedComponent } from './unauthorized/unauthorized.component';
 import { AuthComponent } from './auth/auth.component';
+import { ReportsComponent } from './reports/reports.component';
 
 @NgModule({
   declarations: [
@@ -44,7 +47,8 @@ import { AuthComponent } from './auth/auth.component';
     MessagingComponent,
     PaginatorComponent,
     UnauthorizedComponent,
-    AuthComponent
+    AuthComponent,
+    ReportsComponent
   ],
   imports: [
     BrowserModule,
@@ -60,6 +64,8 @@ import { AuthComponent } from './auth/auth.component';
     MatCheckboxModule,
     MatButtonModule,
     MatInputModule,
+    MatTabsModule,
+    MatDividerModule,
     MatTooltipModule,
     FormsModule,
     ReactiveFormsModule,

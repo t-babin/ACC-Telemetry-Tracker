@@ -4,13 +4,13 @@
         <div style="width: 20%;" fxLayout fxLayoutAlign="space-between center">
             <mat-form-field style="width: 70%;">
                 <mat-label>Filter for user</mat-label>
-                <input matInput [(ngModel)]="filterValue">
+                <input matInput (keyup)="filter($event)">
             </mat-form-field>
 
             <a *ngIf="hasUpdates()" (click)="submitChanges()" style="margin-top: -1.5rem;">Update</a>
         </div>
 
-        <table mat-table [dataSource]="users">
+        <table mat-table [dataSource]="filteredUsers">
             <ng-container matColumnDef="username">
                 <th mat-header-cell *matHeaderCellDef>Discord Username</th>
                 <td mat-cell *matCellDef="let element"> {{ element.username }} </td>
@@ -55,5 +55,44 @@
                 *matRowDef="let row; columns: ['username', 'servername', 'isValid', 'role', 'signupDate', 'fileCount'];">
             </tr>
         </table>
+
+        <div fxLayout style="margin-top: 1rem;">
+            <mat-icon *ngIf="!auditMinimized; else showAudit" class="clickable" style="margin-top: 5px;" (click)="auditMinimized = !auditMinimized">keyboard_arrow_up</mat-icon>
+            <ng-template #showAudit>
+                <mat-icon class="clickable" style="margin-top: 5px;" (click)="auditMinimized = !auditMinimized">keyboard_arrow_down</mat-icon>
+            </ng-template>
+            <h3 (click)="auditMinimized = !auditMinimized" class="clickable" style="margin-bottom: 0;">Audit Log</h3>
+        </div>
+        <div [@shown]="auditMinimized" style="overflow: hidden">
+            <!-- TODO pagination -->
+            <table mat-table [dataSource]="audit">
+                <ng-container matColumnDef="username">
+                    <th mat-header-cell *matHeaderCellDef>Discord Username</th>
+                    <td mat-cell *matCellDef="let element"> {{ element.username }} </td>
+                </ng-container>
+    
+                <ng-container matColumnDef="eventType">
+                    <th mat-header-cell *matHeaderCellDef>Event Type</th>
+                    <td mat-cell *matCellDef="let element"> {{ element.eventType }} </td>
+                </ng-container>
+    
+                <ng-container matColumnDef="eventDate">
+                    <th mat-header-cell *matHeaderCellDef>Event Date</th>
+                    <td mat-cell *matCellDef="let element"> {{ element.eventDate | date: 'long' }} </td>
+                </ng-container>
+    
+                <ng-container matColumnDef="log">
+                    <th mat-header-cell *matHeaderCellDef>Log</th>
+                    <td mat-cell *matCellDef="let element"> {{ element.log }} </td>
+                </ng-container>
+    
+                <tr mat-header-row
+                    *matHeaderRowDef="['username', 'eventDate', 'eventType', 'log']">
+                </tr>
+                <tr mat-row
+                    *matRowDef="let row; columns: ['username', 'eventDate', 'eventType', 'log'];">
+                </tr>
+            </table>
+        </div>
     </div>
 </div>

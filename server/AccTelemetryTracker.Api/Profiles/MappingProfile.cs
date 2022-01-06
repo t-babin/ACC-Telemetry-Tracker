@@ -29,5 +29,14 @@ public class MappingProfile : Profile
             .ForMember(d => d.FileUploadCount, opt => opt.MapFrom(u => u.MotecFiles.Count));
 
         CreateMap<Logic.MotecFile, MotecLapDto>();
+
+        CreateMap<AverageLap, AverageLapDto>()
+            .ForMember(d => d.Car, opt => opt.MapFrom(m => m.Car.Name))
+            .ForMember(d => d.TrackName, opt => opt.MapFrom(m => m.Track.Name))
+            .ForMember(d => d.FastestLap, opt => opt.MapFrom(m => m.AverageFastestLap));
+
+        CreateMap<Audit, AuditDto>()
+            .ForMember(a => a.EventType, opt => opt.MapFrom(au => au.EventType.ToString()))
+            .ForMember(a => a.Username, opt => opt.MapFrom(au => au.User.ServerName));
     }
 }

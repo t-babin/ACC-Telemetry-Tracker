@@ -14,12 +14,16 @@ body {
     margin: 3rem;
 }
 
+.container-sm {
+    margin: 1rem;
+}
+
 table {
     width: 100%;
 }
 
 a {
-    padding: 0.75rem;
+    padding: 0.6rem;
     margin: 5px;
     border: 1px solid #10152C;
     text-decoration: none;
@@ -40,5 +44,18 @@ a:hover:not(.disabled) {
     background-color: #10152C;
     -webkit-box-shadow: 4px 4px 10px 0px rgba(0,0,0,0.5); 
     box-shadow: 4px 4px 10px 0px rgba(0,0,0,0.5);
+    cursor: pointer;
+}
+
+.ngx-charts .refline-label{
+	font-size: 10px !important;
+	font-weight: normal !important;
+}
+
+.center {
+    text-align: center;
+}
+
+.clickable {
     cursor: pointer;
 }

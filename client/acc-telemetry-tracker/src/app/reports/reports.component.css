@@ -1,0 +1,11 @@
+.faster {
+	color: green;
+}
+
+.slower {
+	color: #DA4D1A;
+}
+
+.chart-container {
+	min-height: 600px;
+}

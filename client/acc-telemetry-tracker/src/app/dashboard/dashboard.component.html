@@ -139,7 +139,7 @@
                                     <app-loader [component]="'chart'" [visible]="loadingLapChart"></app-loader>
                                     <div fxLayout fxLayoutAlign="space-evenly center">
                                         <div fxLayout fxLayoutAlign="space-evenly">
-                                            <p>Car/Track Average: </p>
+                                            <p style="margin-right: 3px;">Car/Track Average Fastest Lap: </p>
                                             <p>{{ carTrackAverage | time }}</p>
                                             <div style="margin-left: 5px;" *ngIf="fastestLap() === carTrackAverage">
                                                 --
@@ -154,7 +154,7 @@
                                             </div>
                                         </div>
                                         <div fxLayout fxLayoutAlign="space-evenly">
-                                            <p>Class Average: </p>
+                                            <p style="margin-right: 3px;">Class Average Fastest Lap: </p>
                                             <p>{{ classAverage | time }}</p>
                                             <div style="margin-left: 5px;" *ngIf="fastestLap() === classAverage">
                                                 --
@@ -169,7 +169,7 @@
                                             </div>
                                         </div>
                                         <div fxLayout fxLayoutAlign="space-evenly">
-                                            <p>Class Best: </p>
+                                            <p style="margin-right: 3px;">Class Best Lap: </p>
                                             <p>{{ classBest | time }}</p>
                                             <div style="margin-left: 5px;" *ngIf="fastestLap() === classBest">
                                                 --
@@ -187,18 +187,23 @@
                                     <ngx-charts-line-chart *ngIf="!loadingLapChart"
                                         [xAxisLabel]="'Lap'"
                                         [yAxisLabel]="'Lap Time'"
-                                        [showYAxisLabel]="true"
+                                        [showYAxisLabel]="false"
+                                        [showXAxisLabel]="true"
                                         [results]="lapData"
                                         [xAxis]="true"
+                                        [yAxis]="true"
                                         [showGridLines]="true"
-                                        [autoScale]="true">
-                                        <!-- [yScaleMin]="minLapTime"
-                                        [yScaleMax]="maxLapTime" -->
-                                        <!-- [scheme]="colorScheme" -->
+                                        [scheme]="colorScheme"
+                                        [referenceLines]="referenceLines"
+                                        [showRefLines]="true"
+                                        [yScaleMin]="fastestLap() * 0.99"
+                                        [yAxisTickFormatting]="yAxisTickFormatting">
+                                        <!-- [yScaleMax]="slowestLap() * 1.02" -->
+                                        <!-- [autoScale]="true" -->
                                         <ng-template #tooltipTemplate let-model="model">
                                             <h2 style="color: white; margin-bottom: 0;">{{ model.name }}</h2>
-                                            <h3>{{ model.value | time }}</h3>
-                                            <h5 style="margin-bottom: 0;">Compared to Car/Track Average</h5>
+                                            <h3 style="margin-bottom: 0;">{{ model.value | time }}</h3>
+                                            <h5 style="margin-bottom: 0;">Gap to Car/Track Average Fastest</h5>
                                             <div style="text-align: center;" *ngIf="carTrackAverage === model.value">
                                                 --
                                             </div>
@@ -213,8 +218,8 @@
                                         </ng-template>
                                         <ng-template #seriesTooltipTemplate let-model="model">
                                             <h2 style="color: white; margin-bottom: 0;">{{ model[0].name }}</h2>
-                                            <h3>{{ model[0].value | time }}</h3>
-                                            <h5 style="margin-bottom: 0;">Compared to Car/Track Average</h5>
+                                            <h3 style="margin-bottom: 0;">{{ model[0].value | time }}</h3>
+                                            <h5 style="margin-bottom: 0;">Gap to Car/Track Average Fastest</h5>
                                             <div style="text-align: center;" *ngIf="carTrackAverage === model[0].value">
                                                 --
                                             </div>
@@ -245,12 +250,8 @@
                     [ngClass]="selectedFile === row ? 'selected-row' : ''"></tr>
             </table>
 
-            <!-- TODO more charts -->
-            <!-- 
-                count of each car/track
-                fastest lap for each car on each track
-                avg lap time per car per track
-             -->
+            <mat-divider [hidden]="loadingFiles"></mat-divider>
+            <app-reports [hidden]="loadingFiles" #reports></app-reports>
         </div>
     </div>
 </div>

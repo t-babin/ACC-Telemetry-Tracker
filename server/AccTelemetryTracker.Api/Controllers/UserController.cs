@@ -32,6 +32,7 @@ public class UserController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpGet(Name = "GetAllUsers")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult> GetAllUsers()
     {
         return Ok(_mapper.Map<IEnumerable<UserDto>>(await _context.Users.Include(u => u.MotecFiles).ToListAsync()));
@@ -43,6 +44,9 @@ public class UserController : ControllerBase
     /// <param name="users">The collection of users being updated</param>
     /// <returns></returns>
     [HttpPut(Name = "UpdateUsers")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> UpdateUsers([FromBody] UserCollectionDto users)
     {
         var userCookie = HttpContext.Request.Cookies.FirstOrDefault(c => c.Key.Equals("user"));

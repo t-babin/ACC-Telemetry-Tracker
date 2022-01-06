@@ -23,5 +23,6 @@ public enum EventType
     Authenticate,
     UploadFile,
     DownloadFile,
-    ModifyUser
+    ModifyUser,
+    GetLaps
 }

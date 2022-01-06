@@ -18,8 +18,11 @@ try
     var builder = WebApplication.CreateBuilder(args);
 
     builder.Host.UseSerilog((ctx, lc) => 
+    {
+        lc.MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", Serilog.Events.LogEventLevel.Warning);
         lc.WriteTo.Console()
-        .ReadFrom.Configuration(ctx.Configuration));
+        .ReadFrom.Configuration(ctx.Configuration);
+    });
 
     // Add services to the container.
     builder.Services.AddControllers();
@@ -45,15 +48,7 @@ try
     var adminUsersString = builder.Configuration.GetValue<string>("ADMIN_USERS");
     Log.Information($"Read variable ADMIN_USERS: [{adminUsersString}]");
 
-    var adminUsers = builder.Configuration.GetValue<string>("ADMIN_USERS").Split(",");
-    var slow = builder.Configuration.GetValue<string>("SLOWMODE");
-    Log.Information($"Read variable SLOWMODE: [{slow}]");
-
-    if (!string.IsNullOrEmpty(slow))
-    {
-        Log.Information("slow startup, waiting before proceeding");
-        await Task.Delay(35000);
-    }
+    var adminUsers = adminUsersString.Split(",");
 
     if (!adminUsers.Any())
     {
@@ -73,7 +68,7 @@ try
         Log.Information("Connecting to a local sqlite database");
         builder.Services.AddDbContext<AccTelemetryTrackerContext>(x =>
         {
-            x.UseSqlite($"Data Source={sqliteDatabase}");
+            x.UseSqlite($"Data Source={(string.IsNullOrEmpty(sqliteDatabase) ? "acc.db" : sqliteDatabase)}");
         });
     }
     else
@@ -173,15 +168,6 @@ try
     }
 
     app.UseSerilogRequestLogging();
-
-    // Configure the HTTP request pipeline.
-    if (app.Environment.IsDevelopment())
-    {
-        app.UseSwagger();
-        app.UseSwaggerUI();
-    }
-
-    // app.UseHttpsRedirection();
 
     app.UseRouting();
     app.UseCors();

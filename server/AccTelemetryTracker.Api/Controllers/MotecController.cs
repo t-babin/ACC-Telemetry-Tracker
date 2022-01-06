@@ -288,7 +288,7 @@ public class MotecController : ControllerBase
 
                     await _context.SaveChangesAsync();
 
-                    await _auditRepo.PostAuditEvent(EventType.UploadFile, userId, "Uploaded file", dbMotecFile.Id);
+                    await _auditRepo.PostAuditEvent(EventType.UploadFile, userId, $"Uploaded file [{dbMotecFile.Id}][{dbMotecFile.FileLocation}]", dbMotecFile.Id);
 
                     return Ok(motecFile);
                 }
@@ -365,12 +365,13 @@ public class MotecController : ControllerBase
     }
 
     /// <summary>
-    /// Returns the info for the specified motec file
+    /// Returns the list of laps from the specified motec file
     /// </summary>
     /// <param name="id">The motec file ID to get</param>
     /// <returns></returns>
     [HttpGet("laps/{id}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> GetMotecFileLaps(int id)
@@ -379,6 +380,20 @@ public class MotecController : ControllerBase
         {
             _logger.LogError($"Tried getting laps from file ID [{id}]");
             return BadRequest();
+        }
+
+        var userCookie = HttpContext.Request.Cookies.FirstOrDefault(c => c.Key.Equals("user"));
+        if (!long.TryParse(JsonDocument.Parse(userCookie.Value).RootElement.GetProperty("Id").GetString(), out var userId))
+        {
+            _logger.LogError("Error parsing the user cookie");
+            return Unauthorized();
+        }
+
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null)
+        {
+            _logger.LogError($"User with ID [{userId.ToString()}] doesn't exist");
+            return Unauthorized();
         }
 
         var motecFromDb = await _context.MotecFiles
@@ -405,18 +420,31 @@ public class MotecController : ControllerBase
             ZipFile.ExtractToDirectory(Path.Combine(_storagePage, motecFromDb.FileLocation), tempDir.FullName);
             var motecFile = await _parser.ParseFilesAsync(Directory.GetFiles(tempDir.FullName));
             var mapped = _mapper.Map<MotecLapDto>(motecFile);
-            var comboAverage = await _context.AverageLaps.FirstOrDefaultAsync(a => a.CarId == motecFromDb.CarId && a.TrackId == motecFromDb.TrackId);
+
+            var comboAverage = await _context.AverageLaps
+                .AsNoTracking()
+                .FirstOrDefaultAsync(a => a.CarId == motecFromDb.CarId && a.TrackId == motecFromDb.TrackId);
             _logger.LogInformation($"Car + track average fastest lap: [{comboAverage!.AverageFastestLap}]");
-            var classAverage = await _context.AverageLaps.Where(a => a.TrackId == motecFromDb.TrackId).AverageAsync(a => a.AverageFastestLap);
+
+            var classAverage = await _context.AverageLaps
+                .AsNoTracking()
+                .Include(a => a.Car)
+                .Where(a => a.TrackId == motecFromDb.TrackId && a.Car.Class.Equals(motecFromDb.Car.Class))
+                .AverageAsync(a => a.AverageFastestLap);
             _logger.LogInformation($"Class average fastest lap: [{classAverage}]");
+
             var classFastest = await _context.MotecFiles
+                .AsNoTracking()
                 .Include(m => m.Car)
                 .Where(m => m.TrackId == motecFromDb.TrackId && m.Car.Class.Equals(motecFromDb.Car.Class))
                 .MinAsync(m => m.FastestLap);
             _logger.LogInformation($"Class fastest lap: [{classFastest}]");
+
             mapped.CarTrackAverageLap = comboAverage!.AverageFastestLap;
             mapped.ClassAverageLap = classAverage;
             mapped.ClassBestLap = classFastest;
+
+            await _auditRepo.PostAuditEvent(EventType.GetLaps, userId, $"Got laps for file [{motecFromDb.Id}]", motecFromDb.Id);
 
             return Ok(mapped);
         }
@@ -480,8 +508,92 @@ public class MotecController : ControllerBase
             return NotFound("The motec files could not be found on disk");
         }
 
-        await _auditRepo.PostAuditEvent(EventType.DownloadFile, userId, "Downloaded file", motecFromDb.Id);
+        await _auditRepo.PostAuditEvent(EventType.DownloadFile, userId, $"Downloaded file [{motecFromDb.Id}][{motecFromDb.FileLocation}]", motecFromDb.Id);
 
         return new PhysicalFileResult(Path.GetFullPath(Path.Combine(_storagePage, motecFromDb.FileLocation)), "application/x-zip-compressed");
+    }
+
+    /// <summary>
+    /// Returns a collection containing the car + track for each motec file. Used for a chart.
+    /// </summary>
+    /// <returns></returns>
+    [HttpGet("stats")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult> GetMotecStats()
+    {
+        var data = await _context.MotecFiles
+            .AsNoTracking()
+            .Include(m => m.Car)
+            .Include(m => m.Track)
+            .Select(m => new { Car = m.Car.Name, CarId = m.CarId, Track = m.Track.Name, TrackId = m.TrackId })
+            .OrderBy(m => m.Track)
+            .ToListAsync();
+        
+        return Ok(data);
+    }
+
+    /// <summary>
+    /// Gets the average fastest laps for each car on the specified track
+    /// </summary>
+    /// <param name="id">The ID of the track</param>
+    /// <returns></returns>
+    [HttpGet("stats/track/average/{id}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> GetAverageMotecTrackStats(int id)
+    {
+        if (id < 1)
+        {
+            _logger.LogError($"Tried getting laps from file ID [{id}]");
+            return BadRequest();
+        }
+        var track = await _context.Tracks.FindAsync(id);
+        if (track is null)
+        {
+            _logger.LogError($"The track [{id}] could not be found in the database.");
+            return NotFound();
+        }
+
+        return Ok(_mapper.Map<IEnumerable<AverageLapDto>>(await _context.AverageLaps
+            .AsNoTracking()
+            .Include(a => a.Car)
+            .Include(a => a.Track)
+            .Where(a => a.TrackId == id)
+            .OrderBy(a => a.AverageFastestLap)
+            .ToListAsync()));
+    }
+
+    /// <summary>
+    /// Gets the fastest laps for each car on the specified track
+    /// </summary>
+    /// <param name="id">The ID of the track</param>
+    /// <returns></returns>
+    [HttpGet("stats/track/fastest/{id}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> GetFastestMotecTrackStats(int id)
+    {        
+        if (id < 1)
+        {
+            _logger.LogError($"Tried getting laps from file ID [{id}]");
+            return BadRequest();
+        }
+        var track = await _context.Tracks.FindAsync(id);
+        if (track is null)
+        {
+            _logger.LogError($"The track [{id}] could not be found in the database.");
+            return NotFound();
+        }
+
+        return Ok( await _context.MotecFiles
+            .AsNoTracking()
+            .Include(m => m.Car)
+            .Include(m => m.Track)
+            .Where(m => m.TrackId == id)
+            .GroupBy(m => m.Car.Name)
+            .Select(g => new { Name = g.Key, Min = g.Min(x => x.FastestLap) })
+            .ToListAsync());
     }
 }

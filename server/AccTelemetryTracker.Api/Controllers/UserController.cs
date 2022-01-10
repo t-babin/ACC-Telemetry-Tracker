@@ -81,6 +81,7 @@ public class UserController : ControllerBase
             if (!fromDb.Role.Equals(user.Role) || fromDb.IsValid != user.IsValid)
             {
                 fromDb.Role = user.Role;
+                fromDb.IsValid = user.IsValid;
                 modifiedUsers.Add(fromDb.Id);
             }
         }

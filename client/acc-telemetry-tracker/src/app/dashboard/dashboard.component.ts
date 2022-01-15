@@ -182,7 +182,9 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   }
 
   slowestLap(): number {
-    return Math.max(...this.laps.map(l => l.lapTime));
+    let values = this.laps.map(l => l.lapTime);
+    values.push(...[this.classAverage, this.carTrackAverage]);
+    return Math.max(...values);
   }
 
   page(value: { currentPage: number, pageSize: number }): void {

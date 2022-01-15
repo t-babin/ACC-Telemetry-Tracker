@@ -9,7 +9,7 @@
             <div fxLayout="column" *ngIf="authService.userValue?.isValid; else disabledUser">
                 <a (click)="fileUpload.click()" *ngIf="!processingUpload; else processing">Upload File</a>
                 <ng-template #processing>
-                    <app-loader [visible]="processingUpload" component="upload"></app-loader>
+                    <app-loader [visible]="processingUpload" component="file"></app-loader>
                 </ng-template>
             </div>
             <ng-template #disabledUser>
@@ -197,9 +197,8 @@
                                         [referenceLines]="referenceLines"
                                         [showRefLines]="true"
                                         [yScaleMin]="fastestLap() * 0.99"
+                                        [yScaleMax]="slowestLap() * 1.02"
                                         [yAxisTickFormatting]="yAxisTickFormatting">
-                                        <!-- [yScaleMax]="slowestLap() * 1.02" -->
-                                        <!-- [autoScale]="true" -->
                                         <ng-template #tooltipTemplate let-model="model">
                                             <h2 style="color: white; margin-bottom: 0;">{{ model.name }}</h2>
                                             <h3 style="margin-bottom: 0;">{{ model.value | time }}</h3>

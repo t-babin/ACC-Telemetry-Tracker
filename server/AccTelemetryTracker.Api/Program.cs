@@ -167,7 +167,7 @@ try
         await db.SaveChangesAsync();
     }
 
-    app.UseSerilogRequestLogging();
+    // app.UseSerilogRequestLogging();
 
     app.UseRouting();
     app.UseCors();

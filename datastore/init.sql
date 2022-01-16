@@ -38,6 +38,7 @@ CREATE TABLE MotecFiles (
   NumberOfLaps int NOT NULL,
   FastestLap double NOT NULL,
   FileLocation text,
+  Comment text,
   PRIMARY KEY (Id),
   KEY IX_MotecFiles_CarId (CarId),
   KEY IX_MotecFiles_TrackId (TrackId),
@@ -67,8 +68,6 @@ CREATE TABLE AuditLogs (
   MotecId int DEFAULT NULL,
   Log text,
   PRIMARY KEY (Id),
-  KEY IX_AuditLogs_MotecId (MotecId),
   KEY IX_AuditLogs_UserId (UserId),
-  CONSTRAINT FK_AuditLogs_MotecFiles_MotecId FOREIGN KEY (MotecId) REFERENCES MotecFiles (Id),
   CONSTRAINT FK_AuditLogs_Users_UserId FOREIGN KEY (UserId) REFERENCES Users (Id) ON DELETE CASCADE
 );

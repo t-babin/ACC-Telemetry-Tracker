@@ -44,6 +44,29 @@ export class ApiService {
         return this.httpClient.get<MotecLaps>(`${this.API_BASE_URL}/api/motec/laps/${id}`);
     }
 
+    uploadFile(formData: FormData): Observable<any> {
+        return this.httpClient.post<any>(`${this.API_BASE_URL}/api/motec`, formData);
+    }
+
+    downloadFile(id: number) {
+        return this.httpClient.get(`${this.API_BASE_URL}/api/motec/download/${id}`, {
+            reportProgress: true,
+            responseType: 'blob'
+        });
+    }
+
+    deleteFile(id: number): Observable<any> {
+        return this.httpClient.delete(`${this.API_BASE_URL}/api/motec/delete/${id}`);
+    }
+
+    updateFileComment(updatedFile: MotecFile): Observable<any> {
+        const body = {
+            id: updatedFile.id,
+            comment: updatedFile.comment
+        };
+        return this.httpClient.put<any>(`${this.API_BASE_URL}/api/motec/${updatedFile.id}/comment`, body);
+      }
+
     getCars(): Observable<Car[]> {
         return this.httpClient.get<Car[]>(`${this.API_BASE_URL}/api/motec/cars`);
     }
@@ -68,17 +91,6 @@ export class ApiService {
         return this.httpClient.get<User[]>(`${this.API_BASE_URL}/api/user`);
     }
 
-    uploadFile(formData: FormData): Observable<any> {
-        return this.httpClient.post<any>(`${this.API_BASE_URL}/api/motec`, formData);
-    }
-
-    downloadFile(id: number) {
-        return this.httpClient.get(`${this.API_BASE_URL}/api/motec/download/${id}`, {
-            reportProgress: true,
-            responseType: 'blob'
-        });
-    }
-
     updateUsers(users: User[]): Observable<any> {
         return this.httpClient.put<any>(`${this.API_BASE_URL}/api/user`, { users: users });
     }
@@ -87,13 +99,13 @@ export class ApiService {
         return this.httpClient.get<number>(`${this.API_BASE_URL}/api/motec/count`);
     }
 
+    getAuditLog(): Observable<Audit[]> {
+        return this.httpClient.get<Audit[]>(`${this.API_BASE_URL}/api/audit`);
+    }
+
     authenticateWithCode(code: string): Observable<any> {
         let params = new HttpParams();
         params = params.append('code', code);
         return this.httpClient.get<any>(`${this.API_BASE_URL}/api/auth/callback`, { params: params });
-    }
-
-    getAuditLog(): Observable<Audit[]> {
-        return this.httpClient.get<Audit[]>(`${this.API_BASE_URL}/api/audit`);
     }
 }

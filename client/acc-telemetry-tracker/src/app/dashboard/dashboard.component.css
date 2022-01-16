@@ -1,3 +1,16 @@
+.smaller-button {
+    padding: 3px;
+    margin: 0px;
+    border: 1px solid #10152C;
+    text-decoration: none;
+    text-transform: uppercase;
+    display: inline-block;
+    border-radius: 6px;
+    text-align: center;
+    color: #F6F7EC;
+    background-color: #3F599F;
+}
+
 tr.example-detail-row {
     height: 0;
 }
@@ -47,7 +60,7 @@ table {
 
 .mat-cell,
 .mat-header-cell {
-    padding: 0px 5px;
+    padding: 2px 5px;
     text-align: center;
 	color: inherit;
 	border: none;
@@ -67,4 +80,46 @@ th.mat-header-cell:last-of-type, td.mat-cell:last-of-type, td.mat-footer-cell:la
 
 th.mat-header-cell:first-of-type, td.mat-cell:first-of-type, td.mat-footer-cell:first-of-type {
 	padding-left: 0px;
+}
+
+.mat-column-numLaps {
+	word-wrap: break-word !important;
+    white-space: unset !important;
+    width: 14% !important;
+    overflow-wrap: break-word;
+    word-break: break-word;
+
+    -ms-hyphens: auto;
+    -moz-hyphens: auto;
+    -webkit-hyphens: auto;
+    hyphens: auto;
+}
+
+.mat-column-comment {
+	word-wrap: break-word !important;
+    white-space: pre-wrap;
+    width: 25% !important;
+    overflow-wrap: break-word;
+    word-break: break-word;
+
+    -ms-hyphens: auto;
+    -moz-hyphens: auto;
+    -webkit-hyphens: auto;
+    hyphens: auto;
+}
+
+.comment-update {
+	word-wrap: normal !important;
+    white-space: normal !important;
+    overflow-wrap: normal;
+    word-break: normal;
+
+    -ms-hyphens: none;
+    -moz-hyphens: none;
+    -webkit-hyphens: none;
+    hyphens: none;
+}
+
+textarea {
+	height: 20px;
 }

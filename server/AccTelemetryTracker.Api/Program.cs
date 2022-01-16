@@ -33,6 +33,9 @@ try
     var databaseHost = builder.Configuration.GetValue<string>("DATABASE_HOST");
     Log.Information($"Read variable DATABASE_HOST: [{databaseHost}]");
 
+    var databasePort = builder.Configuration.GetValue<string>("DATABASE_PORT");
+    Log.Information($"Read variable DATABASE_HOST: [{databasePort}]");
+
     var databaseName = builder.Configuration.GetValue<string>("DATABASE_NAME");
     Log.Information($"Read variable DATABASE_NAME: [{databaseName}]");
 
@@ -76,7 +79,7 @@ try
         try
         {
             Log.Information("Connecting to a dockerized database");
-            var connectionString = $"server={databaseHost};database={databaseName};user={databaseUser};password={databasePassword};";
+            var connectionString = $"server={databaseHost};{(string.IsNullOrEmpty(databasePort) ? "" : $"port={databasePort};")}database={databaseName};user={databaseUser};password={databasePassword};";
             builder.Services.AddDbContext<AccTelemetryTrackerContext>(x => x.UseMySql(connectionString, new MySqlServerVersion(new Version(5, 7, 34)), options =>
                 options.EnableRetryOnFailure(
                     maxRetryCount: 10,
@@ -166,8 +169,6 @@ try
         db.Users.AddRange(adminUsers.Select(u => new User { Id = long.Parse(u), IsValid = true, Role = "admin", SignupDate = DateTime.Now }));
         await db.SaveChangesAsync();
     }
-
-    // app.UseSerilogRequestLogging();
 
     app.UseRouting();
     app.UseCors();

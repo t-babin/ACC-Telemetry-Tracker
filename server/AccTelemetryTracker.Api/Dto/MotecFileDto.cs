@@ -25,7 +25,18 @@ public class MotecFileDto
     
     public int NumberOfLaps { get; set; }
     
+    [AllowNull]
+    public string Comment { get; set; }
+    
     public double FastestLap { get; set; }
 
     public IEnumerable<MotecLap> Laps { get; set; } = new List<MotecLap>();
+}
+
+public class MotecFileCommentDto
+{
+    public int Id { get; set; }
+
+    [AllowNull]
+    public string Comment { get; set; }
 }

@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using System.IO.Compression;
 using AccTelemetryTracker.Api.Attributes;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace AccTelemetryTracker.Api.Controllers;
 
@@ -183,6 +184,7 @@ public class MotecController : ControllerBase
             _logger.LogError($"User [{userId.ToString()}] has not been activated");
             return Unauthorized();
         }
+        _logger.LogInformation($"User [{user.Id}] is attempting to upload a file.");
 
         var reader = new MultipartReader(mediaTypeHeader.Boundary.Value, request.Body);
         var section = await reader.ReadNextSectionAsync();
@@ -202,7 +204,8 @@ public class MotecController : ControllerBase
                     var validBytes = await FileHelper.ProcessStreamedFile(section, contentDisposition);
                     if (!validBytes.Any())
                     {
-                        return BadRequest(new { Message = "Error occurred" });
+                        _logger.LogError("Error occurred when processing the file stream. Possible invalid extension");
+                        return BadRequest(new { Message = "Error occurred processing file" });
                     }
 
                     using (var targetStream = System.IO.File.Create(savePath))
@@ -217,7 +220,7 @@ public class MotecController : ControllerBase
 
                     if (motecFile == null)
                     {
-                        return BadRequest(new { Message = "Error parsing the MoTeC files " });
+                        return BadRequest(new { Message = "Error parsing the MoTeC files" });
                     }
 
                     var existingMotec = await _context.MotecFiles
@@ -227,7 +230,7 @@ public class MotecController : ControllerBase
 
                     if (existingMotec != null)
                     {
-                        _logger.LogInformation($"Motec file already exists. Deleting the file [{savePath}]");
+                        _logger.LogInformation($"Motec file [{existingMotec.Id}] already exists. Deleting the file [{savePath}]");
                         System.IO.File.Delete(savePath);
                         return BadRequest(new { Message = "This motec file has already been uploaded" });
                     }
@@ -244,7 +247,7 @@ public class MotecController : ControllerBase
                     if (track == null)
                     {
                         track = new Track { Name = motecFile.Track };
-                        _logger.LogInformation($"Creating new car [{track.Name}]");
+                        _logger.LogInformation($"Creating new track [{track.Name}]");
                         _context.Tracks.Add(track);
                         await _context.SaveChangesAsync();
                     }
@@ -515,6 +518,97 @@ public class MotecController : ControllerBase
     }
 
     /// <summary>
+    /// Delets a motec file from the database. Only admins can delete files.
+    /// </summary>
+    /// <param name="id">The ID being deleted</param>
+    /// <returns></returns>
+    [HttpDelete("delete/{id}", Name = "DeleteMotecFile")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> DeleteFile(int id)
+    {
+        if (id < 1)
+        {
+            _logger.LogError($"Tried getting laps from file ID [{id}]");
+            return BadRequest();
+        }
+
+        var userCookie = HttpContext.Request.Cookies.FirstOrDefault(c => c.Key.Equals("user"));
+        if (!long.TryParse(JsonDocument.Parse(userCookie.Value).RootElement.GetProperty("Id").GetString(), out var userId))
+        {
+            _logger.LogError("Error parsing the user cookie");
+            return Unauthorized();
+        }
+
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null)
+        {
+            _logger.LogError($"User with ID [{userId.ToString()}] doesn't exist");
+            return Unauthorized();
+        }
+
+        if (!user.Role.Equals("admin"))
+        {
+            _logger.LogError($"User with ID [{userId.ToString()}] is not an admin");
+            return Unauthorized();
+        }
+
+        var motecFromDb = await _context.MotecFiles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(m => m.Id == id);
+
+        if (motecFromDb is null)
+        {
+            _logger.LogError($"The motec file with id [{id}] could not be found");
+            return NotFound();
+        }
+
+        _context.MotecFiles.Remove(motecFromDb);
+        if (_context.ChangeTracker.HasChanges())
+        {
+            await _context.SaveChangesAsync();
+        }
+        var location = Path.Combine(_storagePage, motecFromDb.FileLocation);
+        if (System.IO.File.Exists(location))
+        {
+            _logger.LogInformation($"Deleting file [{location}]");
+            System.IO.File.Delete(location);
+        }
+
+        // recalculate the average now that there's one less file
+        var average = await _context.AverageLaps.FirstOrDefaultAsync(a => a.CarId == motecFromDb.CarId && a.TrackId == motecFromDb.TrackId);
+        _logger.LogInformation($"Existing average lap for car [{motecFromDb.CarId}] track [{motecFromDb.TrackId}] -- [{average!.AverageFastestLap}]");
+
+        var existingLaps = await _context.MotecFiles
+            .AsNoTracking()
+            .Where(m => m.CarId == motecFromDb.CarId && m.TrackId == motecFromDb.TrackId)
+            .Select(m => m.FastestLap)
+            .ToListAsync();
+
+        if (existingLaps is not null && existingLaps.Any())
+        {
+            _logger.LogInformation($"Found [{existingLaps.Count}] existing fastest laps");
+            average.AverageFastestLap = existingLaps.Average();
+            _logger.LogInformation($"New average laptime [{average.AverageFastestLap}]");
+        }
+        // deleted the only file, now no laps for that car/track
+        else
+        {
+            _logger.LogInformation($"Removing the average lap for the car [{motecFromDb.CarId}] and track [{motecFromDb.TrackId}] because no entries exist");
+            _context.AverageLaps.Remove(average);
+        }
+
+        if (_context.ChangeTracker.HasChanges())
+        {
+            await _context.SaveChangesAsync();
+        }
+
+        return Ok();
+    }
+
+    /// <summary>
     /// Returns a collection containing the car + track for each motec file. Used for a chart.
     /// </summary>
     /// <returns></returns>
@@ -596,5 +690,67 @@ public class MotecController : ControllerBase
             .GroupBy(m => m.Car.Name)
             .Select(g => new { Name = g.Key, Min = g.Min(x => x.FastestLap) })
             .ToListAsync());
+    }
+
+    /// <summary>
+    /// Updates the comment of a motec file
+    /// </summary>
+    /// <param name="id">The file ID being updated</param>
+    /// <param name="file">The post body containing the comment</param>
+    /// <returns></returns>
+    [HttpPut("{id}/comment")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> UpdateFileComment(int id, [FromBody] MotecFileCommentDto file)
+    {
+        if (id < 1)
+        {
+            _logger.LogError($"Tried getting laps from file ID [{id}]");
+            return BadRequest();
+        }
+
+        var userCookie = HttpContext.Request.Cookies.FirstOrDefault(c => c.Key.Equals("user"));
+        if (!long.TryParse(JsonDocument.Parse(userCookie.Value).RootElement.GetProperty("Id").GetString(), out var userId))
+        {
+            _logger.LogError("Error parsing the user cookie");
+            return Unauthorized();
+        }
+
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null)
+        {
+            _logger.LogError($"User with ID [{userId.ToString()}] doesn't exist");
+            return Unauthorized();
+        }
+
+        if (file.Comment.Length > 256)
+        {
+            _logger.LogInformation($"The comment length [{file.Comment.Length}] is too long");
+            return BadRequest(new { Message = "The comment length is too long" });
+        }
+
+        var motecFromDb = await _context.MotecFiles
+            .FirstOrDefaultAsync(m => m.Id == id);
+
+        if (motecFromDb is null)
+        {
+            _logger.LogError($"The motec file with id [{id}] could not be found");
+            return NotFound();
+        }
+
+        if (motecFromDb.UserId != user.Id)
+        {
+            _logger.LogInformation($"User [{user.Id}] tried commenting on motec file [{id}] which they didn't submit");
+            return Unauthorized();
+        }
+
+        var regex = new Regex("(\n)\\1+");
+        motecFromDb.Comment = regex.Replace(file.Comment.TrimEnd('\n'), "$1");
+        await _context.SaveChangesAsync();
+        await _auditRepo.PostAuditEvent(EventType.UpdateComment, user.Id, $"Set comment to [{file.Comment}]", motecFromDb.Id);
+
+        return Ok();
     }
 }

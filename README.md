@@ -50,39 +50,31 @@ You will need a [Discord Application](https://discord.com/developers/application
 
 ### Environment Variables
 
-Server
-```
-FRONTEND_URL: (required) - used for the authentication callback - the full URL of the frontend
+**Server**
 
-DATABASE_HOST: (optional) - hostname of the database server
+| Variable              | Description                                                                                                                             | Required? |
+|-----------------------|-----------------------------------------------------------------------------------------------------------------------------------------|-----------|
+| FRONTEND_URL          | Used for authentication callback - the full URL of the frontend                                                                         | Yes       |
+| DATABASE_HOST         | Hostname of the database server                                                                                                         | No        |
+| DATABASE_PORT         | Port that the database server is running on                                                                                             | No        |
+| DATABASE_NAME         | Name of the database being connected to                                                                                                 | No        |
+| DATABASE_USER         | Username to connect to the database with                                                                                                | No        |
+| DATABASE_PASSWORD     | Password to connect to the database with                                                                                                | No        |
+| SQLITE_DATABASE       | If at least one of the above DATABASE_* variables are missing, the application falls back to using SQLite with this connection string   | No        |
+| ADMIN_USERS           | Comma-separated list of discord IDs that will be the admin users of the application                                                     | Yes       |
+| DISCORD_GUILD_ID      | A discord guild (server) ID that users will be required to be members of, otherwise they won't be authenticated                         | No        |
+| STORAGE_PATH          | The absolute path of a directory where the Motec files will be saved. Defaults to the directory `files` in the backend source directory | No        |
+| DISCORD_CLIENT_ID     | The Discord OAuth application client ID                                                                                                 | Yes       |
+| DISCORD_CLIENT_SECRET | The Discord OAuth application client secret                                                                                             | Yes       |
 
-DATABASE_NAME: (optional) - name of the database connecting to
+**Frontend**
 
-DATABASE_USER: (optional) - username to connect to the database
+| Variable          | Description                                                                               | Required? |
+|-------------------|-------------------------------------------------------------------------------------------|-----------|
+| API_URL           | The URL of the backend API. If using docker, define it but keep it blank (see the sample) | No        |
+| DISCORD_CLIENT_ID | The Discord OAuth application client ID                                                   | Yes       |
 
-DATABASE_PASSWORD: (optional) - password to connect to the database
-
-SQLITE_DATABASE: (optional) - if at least one of the above DATABASE_* variables are missing, the application falls back to using SQLite
-
-ADMIN_USERS: (required) - Comma-separated list of discord IDs that will be the admin users of the application
-
-DISCORD_GUILD_ID: (optional) - A Discord Guild (server) ID that users will be required to be members of, otherwise they won't be authenticated
-
-STORAGE_PATH: (optional) - The absolute path of a directory where the Motec files will be saved. Defaults to the directory 'files' in the backend source directory
-
-DISCORD_CLIENT_ID: (required) - The Discord OAuth application client ID
-
-DISCORD_CLIENT_SECRET: (required) - The Discord OAuth application client secret
-```
-
-Frontend
-```
-API_URL: (optional) - The URL of the backend API. If using docker, define it but keep it blank (see the sample)
-
-DISCORD_CLIENT_ID: (required) - The Discord OAuth application client ID
-```
-
-Database (look [here](https://hub.docker.com/_/mysql) for reference)
+**Database (look [here](https://hub.docker.com/_/mysql) for reference)**
 ```
 MYSQL_ROOT_PASSWORD
 

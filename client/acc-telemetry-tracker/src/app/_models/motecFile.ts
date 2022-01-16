@@ -8,6 +8,9 @@ export interface MotecFile {
     sessionDate: Date;
     numberOfLaps: number;
     fastestLap: number;
+    comment: string;
+    changedComment: string;
+    editingComment: boolean;
     laps: MotecLap[];
 }
 

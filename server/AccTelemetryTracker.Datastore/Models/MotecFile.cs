@@ -23,6 +23,8 @@ public class MotecFile
     public int NumberOfLaps { get; set; }
     
     public double FastestLap { get; set; }
+
+    public string Comment { get; set; }
     
     public string FileLocation { get; set; } = string.Empty;
 

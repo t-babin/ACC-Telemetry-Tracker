@@ -24,5 +24,6 @@ public enum EventType
     UploadFile,
     DownloadFile,
     ModifyUser,
-    GetLaps
+    GetLaps,
+    UpdateComment
 }

@@ -48,8 +48,10 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   classAverage = 0;
   classBest = 0;
   downloadId = 0;
+  deleteId = 0;
   processingUpload = false;
   referenceLines: any[] = [];
+  tableHeaders = ['car', 'carClass', 'track', 'user', 'numLaps', 'fastestLap', 'dateLoaded', 'comment', 'showLaps', 'download'];
 
   @ViewChild(ReportsComponent)
   reports!: ReportsComponent;
@@ -66,6 +68,10 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   ngOnInit(): void {
     if (!this.authService.isAuthorized) {
       this.authService.authorizedCallback();
+    }
+
+    if (this.authService.userValue?.role === 'admin') {
+      this.tableHeaders.push('delete');
     }
   }
 
@@ -85,6 +91,10 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     }).subscribe({
       next: (value) => {
         this.motecFiles = value.files;
+        this.motecFiles.forEach(m => {
+          m.changedComment = m.comment;
+          m.editingComment = false;
+        });
         this.cars = value.cars;
         this.tracks = value.tracks;
         this.users = value.users;
@@ -169,6 +179,18 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       })
   }
 
+  deleteFile(file: MotecFile): void {
+    this.deleteId = file.id;
+    this.apiService.deleteFile(file.id)
+      .subscribe({
+        next: () => {
+          this.messagingService.pushMessage({ message: 'Successfully deleted file', type: 'success' });
+          this.deleteId = 0;
+          this.reload();
+        }
+      });
+  }
+
   onFilterChange(event: any): void {
     this.reload();
   }
@@ -191,5 +213,26 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     this.pageSize = value.pageSize;
     this.currentPage = value.currentPage;
     this.reload();
+  }
+
+  onCommentChanged(event: any, element: MotecFile): void {
+    element.changedComment = event.target.value;
+  }
+
+  updateComment(element: MotecFile): void {
+    let updatedFile = <MotecFile> Object.assign({}, element);
+    updatedFile.comment = updatedFile.changedComment;
+    console.log(element);
+    console.log(updatedFile);
+
+    this.apiService.updateFileComment(updatedFile)
+      .subscribe({
+        next: () => {
+          this.messagingService.pushMessage({ message: `Successfully updated file comment`, type: 'success' });
+          this.reload();
+        },
+        error: (e) => {
+        }
+      });
   }
 }

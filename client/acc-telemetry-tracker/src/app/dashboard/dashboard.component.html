@@ -69,8 +69,8 @@
                 <ng-container matColumnDef="numLaps">
                     <th mat-header-cell *matHeaderCellDef>
                         <div fxLayout fxLayoutAlign="center center">
-                            <p>Number of Counted Laps</p>
-                            <mat-icon style="font-size: 14px; margin-top: 4px;" matTooltip="Only laps within a certain time range will be counted" [matTooltipPosition]="'above'">info</mat-icon>
+                            <p>Number of Valid Laps</p>
+                            <mat-icon style="font-size: 14px; margin-top: 4px;" matTooltip="Only laps within a certain time range will be Valid" [matTooltipPosition]="'above'">info</mat-icon>
                         </div>
                     </th>
                     <td mat-cell *matCellDef="let element">{{ element.numberOfLaps}}</td>
@@ -86,6 +86,32 @@
                     <td mat-cell *matCellDef="let element">{{ element.dateInserted | date:'short' }}</td>
                 </ng-container>
 
+                <ng-container matColumnDef="comment">
+                    <th mat-header-cell *matHeaderCellDef>
+                        <div fxLayout fxLayoutAlign="center center">
+                            <p>Comment</p>
+                            <mat-icon style="font-size: 14px; margin-top: 4px;" matTooltip="Optional info about the file, ex: fuel, weather, etc." [matTooltipPosition]="'above'">info</mat-icon>
+                        </div>
+                    </th>
+                    <td mat-cell *matCellDef="let element">
+                        <div *ngIf="element.username === authService.userValue?.username && element.editingComment; else commentText">
+                            <mat-form-field class="example-full-width" appearance="outline">
+                                <textarea matInput maxlength="256" (input)="onCommentChanged($event, element)">{{ element.comment }}</textarea>
+                                <mat-hint align="end">{{ element.changedComment?.length ?? 0 }} / 256</mat-hint>
+                            </mat-form-field>
+                            <mat-icon class="faster comment-update clickable" *ngIf="element.comment !== element.changedComment" (click)="updateComment(element)">check</mat-icon>
+                        </div>
+                        <ng-template #commentText>
+                            <div fxLayout fxLayoutAlign="center center">
+                                {{ element.comment }}
+                                <mat-icon *ngIf="element.username === authService.userValue?.username" 
+                                    class="comment-update clickable"
+                                    (click)="element.editingComment = !element.editingComment">edit</mat-icon>
+                            </div>
+                        </ng-template>
+                    </td>
+                </ng-container>
+
                 <ng-container matColumnDef="showLaps">
                     <th mat-header-cell *matHeaderCellDef>Laps</th>
                     <td mat-cell *matCellDef="let element">
@@ -93,7 +119,7 @@
                             style="cursor: pointer; transform: rotate(45deg);" (click)="showLaps(element)">close
                         </mat-icon>
                         <ng-template #shown>
-                            <mat-icon style="cursor: pointer;" (click)="showLaps(element)">close</mat-icon>
+                            <mat-icon class="clickable" (click)="showLaps(element)">close</mat-icon>
                         </ng-template>
                     </td>
                 </ng-container>
@@ -101,8 +127,18 @@
                 <ng-container matColumnDef="download">
                     <th mat-header-cell *matHeaderCellDef></th>
                     <td mat-cell *matCellDef="let element">
-                        <mat-icon style="cursor: pointer;" (click)="downloadFile(element)" *ngIf="downloadId !== element.id; else loadingDownload">save</mat-icon>
+                        <mat-icon class="clickable" (click)="downloadFile(element)" *ngIf="downloadId !== element.id; else loadingDownload">save</mat-icon>
                         <ng-template #loadingDownload>
+                            <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+                        </ng-template>
+                    </td>
+                </ng-container>
+
+                <ng-container matColumnDef="delete">
+                    <th mat-header-cell *matHeaderCellDef></th>
+                    <td mat-cell *matCellDef="let element">
+                        <mat-icon class="clickable" (click)="deleteFile(element)" *ngIf="deleteId !== element.id; else loadingDelete">delete</mat-icon>
+                        <ng-template #loadingDelete>
                             <mat-progress-bar mode="indeterminate"></mat-progress-bar>
                         </ng-template>
                     </td>
@@ -238,11 +274,10 @@
                     </td>
                 </ng-container>
 
-                <tr mat-header-row
-                    *matHeaderRowDef="['car', 'carClass', 'track', 'user', 'numLaps', 'fastestLap', 'dateLoaded', 'showLaps', 'download']">
+                <tr mat-header-row *matHeaderRowDef="tableHeaders">
                 </tr>
                 <tr mat-row
-                    *matRowDef="let element; columns: ['car', 'carClass', 'track', 'user', 'numLaps', 'fastestLap', 'dateLoaded', 'showLaps', 'download'];"
+                    *matRowDef="let element; columns: tableHeaders;"
                     class="example-element-row" [class.example-expanded-row]="selectedFile === element">
                 </tr>
                 <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="example-detail-row"

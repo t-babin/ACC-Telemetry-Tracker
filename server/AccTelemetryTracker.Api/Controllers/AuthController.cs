@@ -89,7 +89,7 @@ public class AuthController : ControllerBase
                     var guildMemberRequest = await client.GetAsync($"https://discord.com/api/users/@me/guilds/{guildId}/member");
                     var guildMemberResponse = await guildMemberRequest.Content.ReadAsStringAsync();
                     var guildMemberJson = JsonDocument.Parse(guildMemberResponse).RootElement;
-                    serverName = guildMemberJson.GetProperty("nick").GetString();
+                    serverName = string.IsNullOrEmpty(guildMemberJson.GetProperty("nick").GetString()) ? userInfoJson.GetProperty("username").GetString() : guildMemberJson.GetProperty("nick").GetString();
 
                     // TODO check if user is in a certain role maybe
                     // var guildRoleRequest = await client.GetAsync($"https://discord.com/api/guilds/{guildId}/roles");

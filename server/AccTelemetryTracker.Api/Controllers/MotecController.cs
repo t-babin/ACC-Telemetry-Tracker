@@ -29,10 +29,11 @@ public class MotecController : ControllerBase
     private readonly IConfiguration _config;
     private readonly IParserLogic _parser;
     private readonly IAuditRepository _auditRepo;
+    private readonly IDiscordNotifier _discordNotifier;
     private readonly string _storagePage;
 
     public MotecController(ILogger<MotecController> logger, AccTelemetryTrackerContext context, IMapper mapper, IConfiguration config, IParserLogic parser,
-        IAuditRepository auditRepo)
+        IAuditRepository auditRepo, IDiscordNotifier discordNotifier)
     {
         _logger = logger;
         _context = context;
@@ -40,6 +41,7 @@ public class MotecController : ControllerBase
         _config = config;
         _parser = parser;
         _auditRepo = auditRepo;
+        _discordNotifier = discordNotifier;
         _storagePage = string.IsNullOrEmpty(_config.GetValue<string>("STORAGE_PATH")) ? "files" : _config.GetValue<string>("STORAGE_PATH");
     }
 
@@ -292,6 +294,8 @@ public class MotecController : ControllerBase
                     await _context.SaveChangesAsync();
 
                     await _auditRepo.PostAuditEvent(EventType.UploadFile, userId, $"Uploaded file [{dbMotecFile.Id}][{dbMotecFile.FileLocation}]", dbMotecFile.Id);
+
+                    await _discordNotifier.Notify(dbMotecFile, JsonDocument.Parse(userCookie.Value).RootElement.GetProperty("Avatar").GetString());
 
                     return Ok(motecFile);
                 }

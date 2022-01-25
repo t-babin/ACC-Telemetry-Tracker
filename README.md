@@ -62,10 +62,11 @@ You will need a [Discord Application](https://discord.com/developers/application
 | DATABASE_PASSWORD     | Password to connect to the database with                                                                                                | No        |
 | SQLITE_DATABASE       | If at least one of the above DATABASE_* variables are missing, the application falls back to using SQLite with this connection string   | No        |
 | ADMIN_USERS           | Comma-separated list of discord IDs that will be the admin users of the application                                                     | Yes       |
-| DISCORD_GUILD_ID      | A discord guild (server) ID that users will be required to be members of, otherwise they won't be authenticated                         | No        |
 | STORAGE_PATH          | The absolute path of a directory where the Motec files will be saved. Defaults to the directory `files` in the backend source directory | No        |
+| DISCORD_GUILD_ID      | A discord guild (server) ID that users will be required to be members of, otherwise they won't be authenticated                         | No        |
 | DISCORD_CLIENT_ID     | The Discord OAuth application client ID                                                                                                 | Yes       |
 | DISCORD_CLIENT_SECRET | The Discord OAuth application client secret                                                                                             | Yes       |
+| DISCORD_WEBHOOK_URL   | A Discord webhook URL. If provided, the webhook will be triggered whenever a user uploads a new file                                    | No        |
 
 **Frontend**
 

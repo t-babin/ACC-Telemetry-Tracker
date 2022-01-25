@@ -121,6 +121,7 @@ try
 
     builder.Services.AddSingleton<IMotecParser, MotecParser>();
     builder.Services.AddSingleton<IParserLogic, ParserLogic>();
+    builder.Services.AddSingleton<IDiscordNotifier, DiscordNotifier>();
     builder.Services.AddScoped<IAuditRepository, AuditRepository>();
 
     builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

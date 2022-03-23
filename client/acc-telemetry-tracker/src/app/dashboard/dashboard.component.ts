@@ -51,7 +51,14 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   deleteId = 0;
   processingUpload = false;
   referenceLines: any[] = [];
-  tableHeaders = ['car', 'carClass', 'track', 'user', 'numLaps', 'fastestLap', 'dateLoaded', 'comment', 'showLaps', 'download'];
+  tableHeaders = ['car', 'carClass', 'track', 'user', 'numLaps', 'fastestLap', 'trackCondition', 'dateLoaded', 'comment', 'showLaps', 'download'];
+  uploadFileName = '';
+  uploadTrackConditions = '';
+  uploadComment = '';
+  uploadFormData: FormData = new FormData();
+  sortDirection: 'asc' | 'desc' = 'asc';
+  sortedOn = '';
+  sortOnString = '';
 
   @ViewChild(ReportsComponent)
   reports!: ReportsComponent;
@@ -83,7 +90,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     this.loadingFiles = true;
     forkJoin({
       files: this.apiService.getMotecFiles(this.selectedCars.value, this.selectedTracks.value,
-        this.selectedUsers.value, this.pageSize, this.currentPage),
+        this.selectedUsers.value, this.pageSize, this.currentPage, this.sortOnString),
       cars: this.apiService.getCars(),
       tracks: this.apiService.getTracks(),
       users: this.apiService.getUsers(),
@@ -94,6 +101,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         this.motecFiles.forEach(m => {
           m.changedComment = m.comment;
           m.editingComment = false;
+          m.changedTrackConditions = m.trackConditions;
+          m.editingConditions = false;
         });
         this.cars = value.cars;
         this.tracks = value.tracks;
@@ -147,24 +156,51 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   onFileSelected(event: any) {
     const file: File = event.target.files[0];
-
+    this.uploadFormData.delete('file');
+    
     if (file) {
-      const formData = new FormData();
-      formData.append("file", file);
-      this.processingUpload = true;
-
-      this.apiService.uploadFile(formData)
-        .subscribe({
-          next: (v) => {
-            this.messagingService.pushMessage({ message: `Successfully uploaded ${v.car} / ${v.track} MoTeC data`, type: 'success' });
-            this.processingUpload = false;
-            this.reload();
-          },
-          error: (e) => {
-            this.processingUpload = false;
-          }
-        });
+      this.uploadFileName = file.name;
+      this.uploadFormData.append('file', file);
     }
+    else {
+      this.uploadFileName = '';
+    }
+  }
+
+  upload(): void {
+    this.processingUpload = true;
+    this.apiService.uploadFile(this.uploadFormData)
+      .subscribe({
+        next: (v) => {
+          this.uploadFileName = '';
+          this.uploadFormData.delete('file');
+          let updatedFile = <MotecFile> Object.assign({}, v);
+          updatedFile.comment = this.uploadComment;
+          updatedFile.trackConditions = this.uploadTrackConditions;
+          
+          forkJoin({
+            comment: this.apiService.updateFileComment(updatedFile),
+            conditions: this.apiService.updateFileConditions(updatedFile)
+          }).subscribe({
+            next: (v) => {
+              this.processingUpload = false;
+              this.reload();
+              this.apiService.notify(updatedFile.id)
+                .subscribe();
+                this.uploadComment = '';
+                this.uploadTrackConditions = '';
+              this.messagingService.pushMessage({ message: `Successfully uploaded ${updatedFile.carName} / ${updatedFile.trackName} MoTeC data`, type: 'success' });
+            }
+          });
+        },
+        error: (e) => {
+          this.processingUpload = false;
+          this.uploadComment = '';
+          this.uploadTrackConditions = '';
+          this.uploadFileName = '';
+          this.uploadFormData.delete('file');
+        }
+      });
   }
 
   downloadFile(file: MotecFile): void {
@@ -219,11 +255,13 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     element.changedComment = event.target.value;
   }
 
+  onUploadCommentChanged(event: any): void {
+    this.uploadComment = event.target.value;
+  }
+
   updateComment(element: MotecFile): void {
     let updatedFile = <MotecFile> Object.assign({}, element);
     updatedFile.comment = updatedFile.changedComment;
-    console.log(element);
-    console.log(updatedFile);
 
     this.apiService.updateFileComment(updatedFile)
       .subscribe({
@@ -234,5 +272,36 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         error: (e) => {
         }
       });
+  }
+
+  updateConditions(element: MotecFile): void {
+    let updatedFile = <MotecFile> Object.assign({}, element);
+    updatedFile.trackConditions = updatedFile.changedTrackConditions;
+
+    this.apiService.updateFileConditions(updatedFile)
+      .subscribe({
+        next: () => {
+          this.messagingService.pushMessage({ message: `Successfully updated track conditions`, type: 'success' });
+          this.reload();
+        },
+        error: (e) => {
+        }
+      });
+  }
+
+  onConditionsChanged(event: any, element: MotecFile): void {
+    element.changedTrackConditions = event.value;
+  }
+
+  sortData(column: string): void {
+    this.sortOnString = `${column}-${this.sortDirection}`;
+    this.sortedOn = column;
+    if (this.sortDirection === 'asc') {
+      this.sortDirection = 'desc';
+    } else {
+      this.sortDirection = 'asc';
+    }
+
+    this.reload();
   }
 }

@@ -123,3 +123,24 @@ th.mat-header-cell:first-of-type, td.mat-cell:first-of-type, td.mat-footer-cell:
 textarea {
 	height: 20px;
 }
+
+.sortable {
+    cursor: pointer;
+    border: none;
+    background: 0 0;
+    display: flex;
+    padding: 0;
+    outline: 0;
+    font: inherit;
+    color: currentColor;
+}
+
+.sortable:hover {
+    text-decoration: underline;
+}
+
+.sort-icon {
+    font-size: 12px !important;
+    padding-top: 5px;
+    margin-left: -5px;
+}

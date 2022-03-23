@@ -34,7 +34,7 @@ try
     Log.Information($"Read variable DATABASE_HOST: [{databaseHost}]");
 
     var databasePort = builder.Configuration.GetValue<string>("DATABASE_PORT");
-    Log.Information($"Read variable DATABASE_HOST: [{databasePort}]");
+    Log.Information($"Read variable DATABASE_PORT: [{databasePort}]");
 
     var databaseName = builder.Configuration.GetValue<string>("DATABASE_NAME");
     Log.Information($"Read variable DATABASE_NAME: [{databaseName}]");

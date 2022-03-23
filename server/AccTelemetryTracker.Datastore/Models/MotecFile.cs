@@ -28,5 +28,18 @@ public class MotecFile
     
     public string FileLocation { get; set; } = string.Empty;
 
+    public TrackCondition? TrackCondition { get; set; }
+    
     public List<Audit> AuditEvents { get; set; }
+}
+
+public enum TrackCondition
+{
+    Green,
+    Fast,
+    Optimum,
+    Greasy,
+    Damp,
+    Wet,
+    Flooded
 }

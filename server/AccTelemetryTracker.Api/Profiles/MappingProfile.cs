@@ -13,7 +13,8 @@ public class MappingProfile : Profile
             .ForMember(d => d.TrackName, opt => opt.MapFrom(m => m.Track.Name))
             .ForMember(d => d.Username, opt => opt.MapFrom(m => m.User.ServerName))
             .ForMember(d => d.Comment, opt => opt.MapFrom(m => m.Comment == null ? string.Empty : m.Comment))
-            .ForMember(d => d.CarName, opt => opt.MapFrom(m => m.Car.Name));
+            .ForMember(d => d.CarName, opt => opt.MapFrom(m => m.Car.Name))
+            .ForMember(d => d.TrackConditions, opt => opt.MapFrom(m => m.TrackCondition == null ? string.Empty : m.TrackCondition.ToString()));
             
         CreateMap<Car, CarDto>();
 

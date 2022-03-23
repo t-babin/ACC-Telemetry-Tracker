@@ -39,6 +39,7 @@ CREATE TABLE MotecFiles (
   FastestLap double NOT NULL,
   FileLocation text,
   Comment text,
+  TrackCondition int,
   PRIMARY KEY (Id),
   KEY IX_MotecFiles_CarId (CarId),
   KEY IX_MotecFiles_TrackId (TrackId),

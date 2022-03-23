@@ -16,7 +16,7 @@ export class ApiService {
         this.API_BASE_URL = environment.apiUrl;
     }
 
-    getMotecFiles(carIds?: number[], trackIds?: number[], userIds?: number[], take?: number, skip?: number): Observable<MotecFile[]> {
+    getMotecFiles(carIds?: number[], trackIds?: number[], userIds?: number[], take?: number, skip?: number, sortOn?: string): Observable<MotecFile[]> {
         let params = new HttpParams();
         if (carIds) {
             carIds.forEach(c => params = params.append('carIds', c));
@@ -33,6 +33,9 @@ export class ApiService {
         if (skip) {
             params = params.append('skip', skip);
         }
+        if (sortOn && sortOn !== '') {
+            params = params.append('sortOn', sortOn);
+        }
         return this.httpClient.get<MotecFile[]>(`${this.API_BASE_URL}/api/motec`, { params: params });
     }
 
@@ -44,8 +47,8 @@ export class ApiService {
         return this.httpClient.get<MotecLaps>(`${this.API_BASE_URL}/api/motec/laps/${id}`);
     }
 
-    uploadFile(formData: FormData): Observable<any> {
-        return this.httpClient.post<any>(`${this.API_BASE_URL}/api/motec`, formData);
+    uploadFile(formData: FormData): Observable<MotecFile> {
+        return this.httpClient.post<MotecFile>(`${this.API_BASE_URL}/api/motec`, formData);
     }
 
     downloadFile(id: number) {
@@ -65,7 +68,15 @@ export class ApiService {
             comment: updatedFile.comment
         };
         return this.httpClient.put<any>(`${this.API_BASE_URL}/api/motec/${updatedFile.id}/comment`, body);
-      }
+    }
+
+    updateFileConditions(updatedFile: MotecFile): Observable<any> {
+        const body = {
+            id: updatedFile.id,
+            trackConditions: updatedFile.trackConditions
+        };
+        return this.httpClient.put<any>(`${this.API_BASE_URL}/api/motec/${updatedFile.id}/conditions`, body);
+    }
 
     getCars(): Observable<Car[]> {
         return this.httpClient.get<Car[]>(`${this.API_BASE_URL}/api/motec/cars`);
@@ -107,5 +118,9 @@ export class ApiService {
         let params = new HttpParams();
         params = params.append('code', code);
         return this.httpClient.get<any>(`${this.API_BASE_URL}/api/auth/callback`, { params: params });
+    }
+
+    notify(id: number): Observable<any> {
+        return this.httpClient.get<any>(`${this.API_BASE_URL}/api/motec/${id}/notify`);
     }
 }

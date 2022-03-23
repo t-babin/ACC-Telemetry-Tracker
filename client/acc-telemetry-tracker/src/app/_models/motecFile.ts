@@ -11,6 +11,9 @@ export interface MotecFile {
     comment: string;
     changedComment: string;
     editingComment: boolean;
+    editingConditions: boolean;
+    trackConditions: string;
+    changedTrackConditions: string;
     laps: MotecLap[];
 }
 

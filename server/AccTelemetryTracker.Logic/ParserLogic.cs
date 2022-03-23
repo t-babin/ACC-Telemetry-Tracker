@@ -6,25 +6,25 @@ public class ParserLogic : IParserLogic
     // filter out lap times that are too small, i.e. track cuts, not full laps, etc.
     private readonly Dictionary<string, int[]> _validTimes = new Dictionary<string, int[]>()
     {
-        { "barcelona", new [] { 100, 120 } },
-        { "brands_hatch", new [] { 80, 110 } },
-        { "donington", new [] { 82, 110 } },
-        { "hungaroring", new [] { 100, 120 } },
-        { "imola", new [] { 99, 115 } },
-        { "kyalami", new [] { 96, 120 } },
-        { "laguna_seca", new [] { 78, 110 } },
-        { "misano", new [] { 90, 120 } },
-        { "monza", new [] { 103, 120 } },
-        { "mount_panorama", new [] { 115, 135 } },
-        { "nurburgring", new [] { 110, 130 } },
-        { "paul_ricard", new [] { 90, 125 } },
-        { "snetterton", new [] { 100, 130 } },
-        { "spa-francorchamps", new [] { 130, 160 } },
-        { "silverstone", new [] { 113, 130 } },
-        { "oulton_park", new [] { 90, 120 } },
-        { "suzuka", new [] { 115, 130 } },
-        { "zandvoort", new [] { 92, 120 } },
-        { "zolder", new [] { 85, 115 } }
+        { "barcelona", new [] { 100, 170 } },
+        { "brands_hatch", new [] { 80, 160 } },
+        { "donington", new [] { 82, 160 } },
+        { "hungaroring", new [] { 100, 170 } },
+        { "imola", new [] { 99, 165 } },
+        { "kyalami", new [] { 96, 170 } },
+        { "laguna_seca", new [] { 78, 160 } },
+        { "misano", new [] { 90, 170 } },
+        { "monza", new [] { 103, 170 } },
+        { "mount_panorama", new [] { 115, 185 } },
+        { "nurburgring", new [] { 110, 180 } },
+        { "paul_ricard", new [] { 90, 175 } },
+        { "snetterton", new [] { 100, 180 } },
+        { "spa-francorchamps", new [] { 130, 210 } },
+        { "silverstone", new [] { 113, 180 } },
+        { "oulton_park", new [] { 90, 170 } },
+        { "suzuka", new [] { 115, 180 } },
+        { "zandvoort", new [] { 92, 170 } },
+        { "zolder", new [] { 85, 165 } }
     };
     private readonly IMotecParser _parser;
     private readonly ILogger<ParserLogic> _logger;

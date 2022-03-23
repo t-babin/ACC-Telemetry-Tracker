@@ -2,15 +2,41 @@
     <app-loader [component]="'data'" [visible]="loadingFiles"></app-loader>
     <div fxLayout fxLayoutAlign="space-between start">
         <div fxLayout="column" fxLayoutAlign="space-between" *ngIf="!loadingFiles">
-            <a (click)="reload()">Reload Data</a>
+            <a *ngIf="!processingUpload; else disabledReload" (click)="reload()">Reload Data</a>
+            <ng-template #disabledReload>
+                <a class="disabled">Reload Data</a>
+            </ng-template>
 
             <input type="file" style="display: none;" (change)="onFileSelected($event)"
                 accept="application/x-zip-compressed" #fileUpload>
             <div fxLayout="column" *ngIf="authService.userValue?.isValid; else disabledUser">
-                <a (click)="fileUpload.click()" *ngIf="!processingUpload; else processing">Upload File</a>
-                <ng-template #processing>
-                    <app-loader [visible]="processingUpload" component="file"></app-loader>
+                <a (click)="fileUpload.click()" *ngIf="uploadFileName === ''; else chosen">Choose File</a>
+                <ng-template #chosen>
+                    <a *ngIf="uploadTrackConditions !== '' && !processingUpload; else disabledTrackConditions" (click)="upload()">Upload File</a>
+                    <ng-template #disabledTrackConditions>
+                        <a class="disabled" [matTooltip]="processingUpload ? '' : 'Track conditions are mandatory.'">Upload File</a>
+                    </ng-template>
                 </ng-template>
+                <app-loader [visible]="processingUpload" component="file"></app-loader>
+                <div *ngIf="uploadFileName !== ''" style="max-width: 180px;">
+                    <p style="font-size: 11px; margin-bottom: 5px !important; margin-top: 5px;">{{ uploadFileName }}</p>
+                    <mat-form-field style="width: 100%;">
+                        <mat-label>Track Conditions</mat-label>
+                        <mat-select [(ngModel)]="uploadTrackConditions">
+                            <mat-option [value]="'Green'">Green</mat-option>
+                            <mat-option [value]="'Fast'">Fast</mat-option>
+                            <mat-option [value]="'Optimum'">Optimum</mat-option>
+                            <mat-option [value]="'Greasy'">Greasy</mat-option>
+                            <mat-option [value]="'Damp'">Damp</mat-option>
+                            <mat-option [value]="'Wet'">Wet</mat-option>
+                            <mat-option [value]="'Flooded'">Flooded</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                    <mat-form-field style="width: 100%;" appearance="outline">
+                        <textarea matInput maxlength="256" placeholder="Optional comment" (input)="onUploadCommentChanged($event)"></textarea>
+                        <mat-hint align="end">{{ uploadComment?.length ?? 0 }} / 256</mat-hint>
+                    </mat-form-field>
+                </div>
             </div>
             <ng-template #disabledUser>
                 <a class="disabled" matTooltip="Uploading is disabled until you are activated.">Upload File</a>
@@ -19,27 +45,27 @@
             <div fxLayout="column" style="margin-top: 1.5rem;">
                 <mat-form-field>
                     <mat-label>Filter for Car</mat-label>
-                    <mat-select multiple [formControl]="selectedCars" (selectionChange)="onFilterChange($event)">
+                    <mat-select multiple [formControl]="selectedCars" (selectionChange)="onFilterChange($event)" [disabled]="processingUpload">
                         <mat-option *ngFor="let c of cars" [value]="c.id">{{ c.name }}</mat-option>
                     </mat-select>
                 </mat-form-field>
 
                 <mat-form-field>
                     <mat-label>Filter for Track</mat-label>
-                    <mat-select multiple [formControl]="selectedTracks" (selectionChange)="onFilterChange($event)">
+                    <mat-select multiple [formControl]="selectedTracks" (selectionChange)="onFilterChange($event)" [disabled]="processingUpload">
                         <mat-option *ngFor="let t of tracks" [value]="t.id">{{ t.name }}</mat-option>
                     </mat-select>
                 </mat-form-field>
 
                 <mat-form-field>
                     <mat-label>Filter for User</mat-label>
-                    <mat-select multiple [formControl]="selectedUsers" (selectionChange)="onFilterChange($event)">
+                    <mat-select multiple [formControl]="selectedUsers" (selectionChange)="onFilterChange($event)" [disabled]="processingUpload">
                         <mat-option *ngFor="let u of users" [value]="u.id">{{ u.serverName }}</mat-option>
                     </mat-select>
                 </mat-form-field>
             </div>
         </div>
-        <div fxLayout="column" style="width: 80%; margin: 0 auto;">
+        <div fxLayout="column" style="width: 85%; margin: 0 auto;">
 
             <div fxLayout fxLayoutAlign="end">
                 <app-paginator [dataLength]="fileCount" [hidden]="motecFiles === null || motecFiles?.length === 0" (pageEvent)="page($event)" [pageSizes]="[20, 50, 100]" [pageSize]="pageSize"></app-paginator>
@@ -52,12 +78,17 @@
                 </ng-container>
 
                 <ng-container matColumnDef="carClass">
-                    <th mat-header-cell *matHeaderCellDef>Car Class</th>
+                    <th mat-header-cell *matHeaderCellDef>Class</th>
                     <td mat-cell *matCellDef="let element">{{ element.carClass }}</td>
                 </ng-container>
 
                 <ng-container matColumnDef="track">
-                    <th mat-header-cell *matHeaderCellDef>Track</th>
+                    <th mat-header-cell *matHeaderCellDef>
+                        <div fxLayout fxLayoutAlign="center center">
+                            <span class="sortable" (click)="sortData('track')">Track</span>
+                            <mat-icon *ngIf="sortedOn === 'track'" class="sort-icon">{{ sortDirection === 'desc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+                        </div>
+                    </th>
                     <td mat-cell *matCellDef="let element">{{ element.trackName }}</td>
                 </ng-container>
 
@@ -77,12 +108,54 @@
                 </ng-container>
 
                 <ng-container matColumnDef="fastestLap">
-                    <th mat-header-cell *matHeaderCellDef>Fastest Lap</th>
+                    <th mat-header-cell *matHeaderCellDef>
+                        <div fxLayout fxLayoutAlign="center center">
+                            <span class="sortable" (click)="sortData('fastestLap')">Fastest Lap</span>
+                            <mat-icon *ngIf="sortedOn === 'fastestLap'" class="sort-icon">{{ sortDirection === 'desc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+                        </div>
+                    </th>
                     <td mat-cell *matCellDef="let element">{{ element.fastestLap | time }}</td>
                 </ng-container>
 
+                <ng-container matColumnDef="trackCondition">
+                    <th mat-header-cell *matHeaderCellDef>Conditions</th>
+                    <td mat-cell *matCellDef="let element">
+                        <div *ngIf="element.username === authService.userValue?.username && element.editingConditions; else editConditions">
+                            <div fxLayout fxLayoutAlign="center center">
+                                <mat-select [(ngModel)]="element.changedTrackConditions" (selectionChange)="onConditionsChanged($event, element)">
+                                    <mat-option [value]="'Green'">Green</mat-option>
+                                    <mat-option [value]="'Fast'">Fast</mat-option>
+                                    <mat-option [value]="'Optimum'">Optimum</mat-option>
+                                    <mat-option [value]="'Greasy'">Greasy</mat-option>
+                                    <mat-option [value]="'Damp'">Damp</mat-option>
+                                    <mat-option [value]="'Wet'">Wet</mat-option>
+                                    <mat-option [value]="'Flooded'">Flooded</mat-option>
+                                </mat-select>
+                                <mat-icon class="faster comment-update clickable" *ngIf="element.trackConditions !== element.changedTrackConditions; else cancelConditions"
+                                    (click)="updateConditions(element)">check</mat-icon>
+                                <ng-template #cancelConditions>
+                                    <mat-icon class="slower comment-update clickable" (click)="element.editingConditions = false">cancel</mat-icon>
+                                </ng-template>
+                            </div>
+                        </div>
+                        <ng-template #editConditions>
+                            <div fxLayout fxLayoutAlign="center center">
+                                <p style="margin-right: 5px;">{{ element.trackConditions }}</p>
+                                <mat-icon *ngIf="element.username === authService.userValue?.username" 
+                                    class="comment-update clickable"
+                                    (click)="element.editingConditions = !element.editingConditions">edit</mat-icon>
+                            </div>
+                        </ng-template>
+                    </td>
+                </ng-container>
+
                 <ng-container matColumnDef="dateLoaded">
-                    <th mat-header-cell *matHeaderCellDef>Date Added</th>
+                    <th mat-header-cell *matHeaderCellDef>
+                        <div fxLayout fxLayoutAlign="center center">
+                            <span class="sortable" (click)="sortData('dateLoaded')">Date Added</span>
+                            <mat-icon *ngIf="sortedOn === 'dateLoaded'" class="sort-icon">{{ sortDirection === 'desc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+                        </div>
+                    </th>
                     <td mat-cell *matCellDef="let element">{{ element.dateInserted | date:'short' }}</td>
                 </ng-container>
 
@@ -99,7 +172,11 @@
                                 <textarea matInput maxlength="256" (input)="onCommentChanged($event, element)">{{ element.comment }}</textarea>
                                 <mat-hint align="end">{{ element.changedComment?.length ?? 0 }} / 256</mat-hint>
                             </mat-form-field>
-                            <mat-icon class="faster comment-update clickable" *ngIf="element.comment !== element.changedComment" (click)="updateComment(element)">check</mat-icon>
+                            <mat-icon class="faster comment-update clickable" *ngIf="element.comment !== element.changedComment; else cancelComment"
+                                (click)="updateComment(element)">check</mat-icon>
+                            <ng-template #cancelComment>
+                                <mat-icon class="slower comment-update clickable" (click)="element.editingComment = false">cancel</mat-icon>
+                            </ng-template>
                         </div>
                         <ng-template #commentText>
                             <div fxLayout fxLayoutAlign="center center">

@@ -56,8 +56,8 @@ public class MotecController : ControllerBase
     /// <returns></returns>
     [HttpGet(Name = "GetAll")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult> GetAll([FromQuery] IEnumerable<int>? carIds, [FromQuery] IEnumerable<int> trackIds,
-        [FromQuery] IEnumerable<long>? userIds, [FromQuery] int? take, [FromQuery] int? skip)
+    public async Task<ActionResult> GetAll([FromQuery] IEnumerable<int>? carIds, [FromQuery] IEnumerable<int>? trackIds,
+        [FromQuery] IEnumerable<long>? userIds, [FromQuery] int? take, [FromQuery] int? skip, [FromQuery] string? sortOn)
     {
         var userCookie = HttpContext.Request.Cookies.FirstOrDefault(c => c.Key.Equals("user"));
         if (!long.TryParse(JsonDocument.Parse(userCookie.Value).RootElement.GetProperty("Id").GetString(), out var userId))
@@ -113,7 +113,63 @@ public class MotecController : ControllerBase
             files = files.Where(f => userIds.Contains(f.UserId));
         }
 
-        return Ok(_mapper.Map<IEnumerable<MotecFileDto>>(await files.OrderBy(m => m.Track.Name).ThenBy(m => m.Car.Name).ThenBy(m => m.FastestLap).Skip(skip.HasValue ? skip.Value : 0).Take(take.HasValue ? take.Value : 10).ToListAsync()));
+        List<Datastore.Models.MotecFile> motecFiles;
+        if (!string.IsNullOrEmpty(sortOn))
+        {
+            var sort = sortOn.Split("-");
+            motecFiles = await files.ToListAsync();
+            switch (sort[0].ToLower())
+            {
+                case "track":
+                    motecFiles = sort[1].ToLower().Equals("asc")
+                        ? motecFiles.OrderBy(m => m.Track.Name)
+                            .ThenBy(m => m.FastestLap)
+                            .ToList()
+                        : motecFiles.OrderByDescending(m => m.Track.Name)
+                            .ThenBy(m => m.FastestLap)
+                            .ToList();
+                    break;
+
+                case "fastestlap":
+                    motecFiles = sort[1].ToLower().Equals("asc")
+                        ? motecFiles.OrderBy(m => m.FastestLap).ToList()
+                        : motecFiles.OrderByDescending(m => m.FastestLap).ToList();
+                    break;
+
+                case "dateloaded":
+                    motecFiles = sort[1].ToLower().Equals("asc")
+                        ? motecFiles.OrderBy(m => m.DateInserted)
+                            .ThenBy(m => m.FastestLap)
+                            .ToList()
+                        : motecFiles.OrderByDescending(m => m.DateInserted)
+                            .ThenBy(m => m.FastestLap)
+                            .ToList();
+                    break;
+                default:
+                    motecFiles = motecFiles.OrderBy(m => m.Track.Name)
+                        .ThenBy(m => m.Car.Name)
+                            .ThenBy(m => m.FastestLap)
+                        .ToList();
+                    break;
+            }
+
+            motecFiles = motecFiles
+                .Skip(skip.HasValue ? skip.Value : 0)
+                .Take(take.HasValue ? take.Value : 10)
+                .ToList();
+        }
+        else
+        {
+            motecFiles = await files
+                .OrderBy(m => m.Track.Name)
+                    .ThenBy(m => m.Car.Name)
+                        .ThenBy(m => m.FastestLap)
+                .Skip(skip.HasValue ? skip.Value : 0)
+                .Take(take.HasValue ? take.Value : 10)
+                .ToListAsync();
+        }
+
+        return Ok(_mapper.Map<IEnumerable<MotecFileDto>>(motecFiles));
     }
 
     /// <summary>
@@ -295,9 +351,9 @@ public class MotecController : ControllerBase
 
                     await _auditRepo.PostAuditEvent(EventType.UploadFile, userId, $"Uploaded file [{dbMotecFile.Id}][{dbMotecFile.FileLocation}]", dbMotecFile.Id);
 
-                    await _discordNotifier.Notify(dbMotecFile, JsonDocument.Parse(userCookie.Value).RootElement.GetProperty("Avatar").GetString());
+                    // await _discordNotifier.Notify(dbMotecFile, JsonDocument.Parse(userCookie.Value).RootElement.GetProperty("Avatar").GetString());
 
-                    return Ok(motecFile);
+                    return Ok(_mapper.Map<MotecFileDto>(dbMotecFile));
                 }
                 catch (IOException ex)
                 {
@@ -389,18 +445,10 @@ public class MotecController : ControllerBase
             return BadRequest();
         }
 
-        var userCookie = HttpContext.Request.Cookies.FirstOrDefault(c => c.Key.Equals("user"));
-        if (!long.TryParse(JsonDocument.Parse(userCookie.Value).RootElement.GetProperty("Id").GetString(), out var userId))
+        var userValidation = await ValidateUser();
+        if (userValidation.Result != null)
         {
-            _logger.LogError("Error parsing the user cookie");
-            return Unauthorized();
-        }
-
-        var user = await _context.Users.FindAsync(userId);
-        if (user == null)
-        {
-            _logger.LogError($"User with ID [{userId.ToString()}] doesn't exist");
-            return Unauthorized();
+            return userValidation.Result;
         }
 
         var motecFromDb = await _context.MotecFiles
@@ -451,7 +499,7 @@ public class MotecController : ControllerBase
             mapped.ClassAverageLap = classAverage;
             mapped.ClassBestLap = classFastest;
 
-            await _auditRepo.PostAuditEvent(EventType.GetLaps, userId, $"Got laps for file [{motecFromDb.Id}]", motecFromDb.Id);
+            await _auditRepo.PostAuditEvent(EventType.GetLaps, userValidation.User!.Id, $"Got laps for file [{motecFromDb.Id}]", motecFromDb.Id);
 
             return Ok(mapped);
         }
@@ -486,18 +534,10 @@ public class MotecController : ControllerBase
             return BadRequest();
         }
 
-        var userCookie = HttpContext.Request.Cookies.FirstOrDefault(c => c.Key.Equals("user"));
-        if (!long.TryParse(JsonDocument.Parse(userCookie.Value).RootElement.GetProperty("Id").GetString(), out var userId))
+        var userValidation = await ValidateUser();
+        if (userValidation.Result != null)
         {
-            _logger.LogError("Error parsing the user cookie");
-            return Unauthorized();
-        }
-
-        var user = await _context.Users.FindAsync(userId);
-        if (user == null)
-        {
-            _logger.LogError($"User with ID [{userId.ToString()}] doesn't exist");
-            return Unauthorized();
+            return userValidation.Result;
         }
 
         var motecFromDb = await _context.MotecFiles
@@ -516,7 +556,7 @@ public class MotecController : ControllerBase
             return NotFound("The motec files could not be found on disk");
         }
 
-        await _auditRepo.PostAuditEvent(EventType.DownloadFile, userId, $"Downloaded file [{motecFromDb.Id}][{motecFromDb.FileLocation}]", motecFromDb.Id);
+        await _auditRepo.PostAuditEvent(EventType.DownloadFile, userValidation.User!.Id, $"Downloaded file [{motecFromDb.Id}][{motecFromDb.FileLocation}]", motecFromDb.Id);
 
         return new PhysicalFileResult(Path.GetFullPath(Path.Combine(_storagePage, motecFromDb.FileLocation)), "application/x-zip-compressed");
     }
@@ -539,23 +579,15 @@ public class MotecController : ControllerBase
             return BadRequest();
         }
 
-        var userCookie = HttpContext.Request.Cookies.FirstOrDefault(c => c.Key.Equals("user"));
-        if (!long.TryParse(JsonDocument.Parse(userCookie.Value).RootElement.GetProperty("Id").GetString(), out var userId))
+        var userValidation = await ValidateUser();
+        if (userValidation.Result != null)
         {
-            _logger.LogError("Error parsing the user cookie");
-            return Unauthorized();
+            return userValidation.Result;
         }
 
-        var user = await _context.Users.FindAsync(userId);
-        if (user == null)
+        if (!userValidation.User!.Role.Equals("admin"))
         {
-            _logger.LogError($"User with ID [{userId.ToString()}] doesn't exist");
-            return Unauthorized();
-        }
-
-        if (!user.Role.Equals("admin"))
-        {
-            _logger.LogError($"User with ID [{userId.ToString()}] is not an admin");
+            _logger.LogError($"User with ID [{userValidation.User!.Id.ToString()}] is not an admin");
             return Unauthorized();
         }
 
@@ -715,18 +747,10 @@ public class MotecController : ControllerBase
             return BadRequest();
         }
 
-        var userCookie = HttpContext.Request.Cookies.FirstOrDefault(c => c.Key.Equals("user"));
-        if (!long.TryParse(JsonDocument.Parse(userCookie.Value).RootElement.GetProperty("Id").GetString(), out var userId))
+        var userValidation = await ValidateUser();
+        if (userValidation.Result != null)
         {
-            _logger.LogError("Error parsing the user cookie");
-            return Unauthorized();
-        }
-
-        var user = await _context.Users.FindAsync(userId);
-        if (user == null)
-        {
-            _logger.LogError($"User with ID [{userId.ToString()}] doesn't exist");
-            return Unauthorized();
+            return userValidation.Result;
         }
 
         if (file.Comment.Length > 256)
@@ -744,17 +768,117 @@ public class MotecController : ControllerBase
             return NotFound();
         }
 
-        if (motecFromDb.UserId != user.Id)
+        if (motecFromDb.UserId != userValidation.User!.Id)
         {
-            _logger.LogInformation($"User [{user.Id}] tried commenting on motec file [{id}] which they didn't submit");
+            _logger.LogInformation($"User [{userValidation.User!.Id}] tried commenting on motec file [{id}] which they didn't submit");
             return Unauthorized();
         }
 
         var regex = new Regex("(\n)\\1+");
         motecFromDb.Comment = regex.Replace(file.Comment.TrimEnd('\n'), "$1");
         await _context.SaveChangesAsync();
-        await _auditRepo.PostAuditEvent(EventType.UpdateComment, user.Id, $"Set comment to [{file.Comment}]", motecFromDb.Id);
+        await _auditRepo.PostAuditEvent(EventType.UpdateComment, userValidation.User!.Id, $"Set comment to [{file.Comment}]", motecFromDb.Id);
 
         return Ok();
+    }
+
+    /// <summary>
+    /// Updates the track conditions of a motec file
+    /// </summary>
+    /// <param name="id">The file ID being updated</param>
+    /// <param name="file">The post body containing the new track conditions</param>
+    /// <returns></returns>
+    [HttpPut("{id}/conditions")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> UpdateFileTrackConditions(int id, [FromBody] MotecTrackConditionsDto file)
+    {
+        if (id < 1)
+        {
+            _logger.LogError($"Tried getting laps from file ID [{id}]");
+            return BadRequest();
+        }
+
+        var userValidation = await ValidateUser();
+        if (userValidation.Result != null)
+        {
+            return userValidation.Result;
+        }
+
+        if (!Enum.TryParse(typeof(TrackCondition), file.TrackConditions, out var trackCondition))
+        {
+            _logger.LogError($"The supplied condition is not valid");
+            return BadRequest();
+        }
+        _logger.LogInformation($"Setting track condition to [{trackCondition}]");
+
+        var motecFromDb = await _context.MotecFiles
+            .FirstOrDefaultAsync(m => m.Id == id);
+
+        if (motecFromDb is null)
+        {
+            _logger.LogError($"The motec file with id [{id}] could not be found");
+            return NotFound();
+        }
+
+        if (motecFromDb.UserId != userValidation.User!.Id)
+        {
+            _logger.LogInformation($"User [{userValidation.User!.Id}] tried commenting on motec file [{id}] which they didn't submit");
+            return Unauthorized();
+        }
+
+        motecFromDb.TrackCondition = (TrackCondition) trackCondition!;
+        await _context.SaveChangesAsync();
+        await _auditRepo.PostAuditEvent(EventType.UpdateTrackCondition, userValidation.User!.Id, $"Set track condition to [{file.TrackConditions}]", motecFromDb.Id);
+
+        return Ok();
+    }
+
+    [HttpGet("{id}/notify")]
+    public async Task<ActionResult> Notify(int id)
+    {
+        var userCookie = HttpContext.Request.Cookies.FirstOrDefault(c => c.Key.Equals("user"));
+        if (!long.TryParse(JsonDocument.Parse(userCookie.Value).RootElement.GetProperty("Id").GetString(), out var userId))
+        {
+            _logger.LogError("Error parsing the user cookie");
+            return Unauthorized();
+        }
+
+        var motecFromDb = await _context.MotecFiles
+            .Include(m => m.Car)
+            .Include(m => m.Track)
+            .Include(m => m.User)
+            .FirstOrDefaultAsync(m => m.Id == id);
+
+        if (motecFromDb is null)
+        {
+            _logger.LogError($"The motec file with id [{id}] could not be found");
+            return NotFound();
+        }
+        
+        await _discordNotifier.Notify(motecFromDb, JsonDocument.Parse(userCookie.Value).RootElement.GetProperty("Avatar").GetString());
+
+        return Ok();
+    }
+
+    private async Task<(ActionResult? Result, User? User, KeyValuePair<string, string>? Cookie)> ValidateUser()
+    {
+        var userCookie = HttpContext.Request.Cookies.FirstOrDefault(c => c.Key.Equals("user"));
+        if (!long.TryParse(JsonDocument.Parse(userCookie.Value).RootElement.GetProperty("Id").GetString(), out var userId))
+        {
+            _logger.LogError("Error parsing the user cookie");
+            return (Unauthorized(), null, null);
+        }
+
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null)
+        {
+            _logger.LogError($"User with ID [{userId.ToString()}] doesn't exist");
+            return (Unauthorized(), null, null);
+        }
+
+        return (null, user, userCookie);
     }
 }

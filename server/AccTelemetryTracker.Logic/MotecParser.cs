@@ -20,6 +20,7 @@ public class MotecParser : IMotecParser
         { "V8 Vantage GT3", "GT3"},
         { "R8 LMS", "GT3" },
         { "R8 LMS EVO", "GT3" },
+        { "R8 LMS EVO II", "GT3" },
         { "Continental 16", "GT3"},
         { "Continental 18", "GT3"},
         { "M4 GT3", "GT3"},
@@ -55,8 +56,14 @@ public class MotecParser : IMotecParser
         { "718 Cayman GT4 MR", "GT4" },
 
         { "991II GT3 Cup", "Cup" },
+        { "992 GT3 Cup", "Cup" },
 
         { "Huracan ST", "ST" },
+        { "Huracan ST Evo2", "ST" },
+
+        { "488 Challenge Evo", "CHL" },
+
+        { "M2 CS Racing", "TCX" },
     };
 
     private readonly Dictionary<string, string> _validTracks = new Dictionary<string, string>()

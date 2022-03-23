@@ -22,6 +22,8 @@ Users are authenticated via Discord, and optionally need to belong to a specific
 
 - See how your lap times compare to other cars on the same track
 
+- Discord notifications on file upload
+
 - A user cannot upload a file until they have been activated by one of the admin users
 
 A single file can be uploaded at a time. Each file needs to be a zip archive (not exceeding 150MB) containing exactly two files: the .ld and .ldx Motec files.

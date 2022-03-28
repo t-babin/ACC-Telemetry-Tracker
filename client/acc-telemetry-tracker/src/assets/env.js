@@ -3,5 +3,5 @@
 
     // Environment variables
     window["env"]["apiUrl"] = "https://localhost:7112";
-    window["env"]["discordClient"] = "PLACEHOLDER";
+    window["env"]["discordClient"] = "PLACEHOLDER - UPDATE THIS VALUE";
 })(this);

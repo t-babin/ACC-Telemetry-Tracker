@@ -1,6 +1,7 @@
 version: '3.3'
 
 services:
+  # the main application reverse proxy
   proxy:
     build:
       context: ./proxy
@@ -9,6 +10,7 @@ services:
     ports:
       - 8345:80
 
+  # the Angular frontend container
   frontend:
     build:
       context: ./client/acc-telemetry-tracker
@@ -17,9 +19,12 @@ services:
       - api
     restart: always
     environment:
+      # should leave this blank otherwise might face CORS issues
       API_URL:
+      # Update with your Discord client ID
       DISCORD_CLIENT_ID: 12345
   
+  # The MySQL Database container
   database:
     build:
       context: ./datastore
@@ -28,12 +33,14 @@ services:
       - /some/database/file/path:/var/lib/mysql
       #- db_data:/var/lib/mysql
     restart: always
+    # Set these to whatever you want
     environment:
-      MYSQL_ROOT_PASSWORD: super-secure-root-password
+      MYSQL_ROOT_PASSWORD: 
       MYSQL_DATABASE: acc_telemetry_tracker
-      MYSQL_USER: acc_user
-      MYSQL_PASSWORD: acc_password
+      MYSQL_USER: 
+      MYSQL_PASSWORD: 
 
+  # The .NET 6 API container
   api:
     build:
       context: ./server
@@ -42,19 +49,31 @@ services:
       - database
     restart: always
     environment:
-      DATABASE_HOST: database
-      DATABASE_NAME: acc_telemetry_tracker
-      DATABASE_USER: acc_user
-      DATABASE_PASSWORD: acc_password
-      DISCORD_CLIENT_ID: 
-      DISCORD_CLIENT_SECRET: 
-      DISCORD_GUILD_ID: 98765
-      STORAGE_PATH: /motec
+      # Update with the URL for your frontend. Ex using the exposed port from the proxy container: http://192.168.0.1:8345
       FRONTEND_URL: http://full-front-end-url
+      DATABASE_HOST: database
+      # If your database is running on a non-standard port
+      DATABASE_PORT:
+      # the database environment variables should match what was set in the database container section
+      DATABASE_NAME: acc_telemetry_tracker
+      DATABASE_USER:
+      DATABASE_PASSWORD:
+      # Comma-separated list of discord user IDs that will be the admin users of the application
       ADMIN_USERS: 12345,56789
+      # Update with the path in the container you want the motec files to be saved to
+      STORAGE_PATH: /motec
+      # Update with your Discord GUILD (server) ID. Optional
+      DISCORD_GUILD_ID:
+      # Update with your Discord client ID
+      DISCORD_CLIENT_ID: 
+      # Update with your Discord client secret
+      DISCORD_CLIENT_SECRET: 
+      # Update with your Discord webhook URL
+      DISCORD_WEBHOOK_URL: 
     ports:
       - 8346:80
     volumes:
+      # The path mapping for the motec files
       - /some/motec/path:/motec
       # next one is optional
       - /some/log/path:/app/logs

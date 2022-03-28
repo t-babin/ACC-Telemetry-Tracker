@@ -47,7 +47,7 @@ public class ParserLogicTests
             Assert.AreEqual("Kyalami", file.Track);
             Assert.AreEqual("991ii GT3 R EVO", file.Car);
             CollectionAssert.IsNotEmpty(file.Laps);
-            Assert.AreEqual(2, file.Laps.Count());
+            Assert.AreEqual(3, file.Laps.Count());
         });
     }
 

@@ -34,18 +34,18 @@ export class ReportsComponent implements OnInit {
   loadingStats = false;
   loadingBreakdownChart = true;
   loadingTrackChart = true;
-  averageLaps: MotecLapStat[] = [];
-  stats: MotecStat[] = [];
+  lapStats: MotecLapStat[] = [];
+  counts: MotecStat[] = [];
   overallBreakdownData: MultiSeries[] = [];
   averageLapData: MultiSeries[] = [];
   selectedTrackIndex = 0;
 
   colourScheme = {
-    domain: ['#DA4D1A', '#3F599F', '#10152C']
+    domain: ['#DA4D1A', '#EE8F6D', '#3F599F', '#6D85C5', '#10152C', '#314087', '#7CB4B8', '#E8DB7D']
   };
 
   yAxisTickFormatting = (value: any) => this.timePipe.transform(value);
-  
+
   constructor(private apiService: ApiService, private timePipe: TimePipe) { }
 
   ngOnInit(): void {
@@ -55,10 +55,14 @@ export class ReportsComponent implements OnInit {
     this.loadingStats = true;
     this.loadingBreakdownChart = true;
     this.overallBreakdownData = [];
-    this.apiService.getMotecStats()
-      .subscribe(res => {
-        this.stats = res;
-        this.stats.forEach(s => {
+    forkJoin({
+      counts: this.apiService.getMotecStats(),
+      stats: this.apiService.getMotecTrackStats()
+    }).subscribe({
+      next: (res) => {
+        this.counts = res.counts;
+        this.lapStats = res.stats;
+        this.counts.forEach(s => {
           if (this.overallBreakdownData.filter(o => o.name === s.track).length > 0) {
             const trackData = this.overallBreakdownData.filter(o => o.name === s.track)[0];
             if (trackData.series.filter(v => v.name === s.car).length > 0) {
@@ -76,11 +80,12 @@ export class ReportsComponent implements OnInit {
         });
         this.loadingStats = false;
         setTimeout(() => this.loadingBreakdownChart = false, 500);
-      });
+      }
+    });
   }
 
   getTracks(): string[] {
-    return this.stats.map(s => s.track).filter((value, index, self) => self.indexOf(value) === index);
+    return this.counts.map(s => s.track).filter((value, index, self) => self.indexOf(value) === index);
   }
 
   changeMetricsVisibility(): void {
@@ -91,28 +96,23 @@ export class ReportsComponent implements OnInit {
     if (event.tab.textLabel === 'Track Breakdown' || this.getTracks().indexOf(event.tab.textLabel) >= 0) {
       this.averageLapData = [];
       this.loadingTrackChart = true;
-      const trackId = this.stats.filter(s => s.track === this.getTracks()[this.selectedTrackIndex])[0].trackId;
-      forkJoin({
-        average: this.apiService.getMotecAverageTrackStats(trackId),
-        fastest: this.apiService.getMotecFastestTrackStats(trackId),
-      })
-        .subscribe({
-          next: (res) => {
-          this.averageLaps = res.average;
-          this.averageLapData.push({
-            name: 'Average Fastest Lap Time', series: []
-          });
-          this.averageLapData.push({
-            name: 'Overall Fastest Lap Time', series: []
-          });
-          res.average.forEach(r => this.averageLapData[0].series.push({ name: r.car, value: r.fastestLap }));
-          res.fastest.forEach(r => this.averageLapData[1].series.push({ name: r.name, value: r.min }));
-          setTimeout(() => this.loadingTrackChart = false, 500);
-        }});
-    }
-  }
+      const trackId = this.counts.filter(s => s.track === this.getTracks()[this.selectedTrackIndex])[0].trackId;
+      const trackStats = this.lapStats.filter(l => l.trackId === trackId);
+      console.log(trackStats);
+      const conditions = [...new Set(trackStats.map(t => t.trackCondition))];
+      console.log(conditions);
+      conditions.forEach(c => {
+        this.averageLapData.push({ name: `${c} - Average Fastest Lap`, series: [] });
+        this.averageLapData.push({ name: `${c} - Overall Fastest Lap`, series: [] });
+      });
+      this.lapStats.filter(l => l.trackId === trackId).forEach(l => {
+        const avgBucket = this.averageLapData.filter(a => a.name === `${l.trackCondition} - Average Fastest Lap`)[0];
+        const fastBucket = this.averageLapData.filter(a => a.name === `${l.trackCondition} - Overall Fastest Lap`)[0];
 
-  fastestLap(): number {
-    return Math.min(...this.averageLaps.map(l => l.fastestLap));
+        avgBucket.series.push({ name: l.car, value: l.averageFastestLap });
+        fastBucket.series.push({ name: l.car, value: l.fastestLap });
+      });
+      setTimeout(() => this.loadingTrackChart = false, 500);
+    }
   }
 }

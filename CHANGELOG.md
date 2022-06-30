@@ -1,3 +1,8 @@
+# 1.4
+- Average fastest laps now consider track conditions
+- Updated charts for the average fastest laps with the various track conditions
+- Added tracks from the American pack DLC
+
 # 1.3
 - Relaxed laptime upper limits
 - Added Challenger Pack DLC cars

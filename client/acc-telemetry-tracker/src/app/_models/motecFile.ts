@@ -39,4 +39,6 @@ export interface MotecStat {
 
 export interface MotecLapStat extends MotecStat {
     fastestLap: number;
+    averageFastestLap: number;
+    trackCondition: string;
 }

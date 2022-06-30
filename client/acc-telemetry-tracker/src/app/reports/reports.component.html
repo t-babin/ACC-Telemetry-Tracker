@@ -9,7 +9,7 @@
     <div class="container-sm" style="text-align: center;">
         <div fxLayout fxLayoutAlign=" start">
             <app-loader component="metrics" [visible]="loadingStats"></app-loader>
-            <div style="width: 100%;" *ngIf="stats.length > 0 && !loadingStats">
+            <div style="width: 100%;" *ngIf="counts.length > 0 && !loadingStats">
                 <mat-tab-group dynamicHeight (selectedTabChange)="tabChanged($event)">
                     <mat-tab label="Overall Breakdown">
                         <div class="chart-container">
@@ -46,25 +46,12 @@
                                             [autoScale]="true">
                                             <ng-template #tooltipTemplate let-model="model">
                                                 <h2 style="color: white; margin-bottom: 0;">{{ model.name }}</h2>
-                                                <h3>{{ model.value | time }}</h3>
+                                                <h3>{{ model.series }} - {{ model.value | time }}</h3>
                                             </ng-template>
                                             <ng-template #seriesTooltipTemplate let-model="model">
                                                 <h2 style="color: white; margin-bottom: 0;">{{ model[0].name }}</h2>
-                                                <h3 style="margin-bottom: 0;">Average Fastest: {{ model[0].value | time }}</h3>
-                                                <h3 style="margin-bottom: 0;">Overall Fastest: {{ model[1].value | time }}</h3>
-                                                <div fxLayout fxLayoutAlign="center center" class="center">
-                                                    <h5 style="margin-bottom: 0; margin-right: 4px;">Gap: </h5>
-                                                    <div class="center" *ngIf="model[1].value === model[0].value">
-                                                        --
-                                                    </div>
-                                                    <div class="center" *ngIf="model[1].value > model[0].value" fxLayout fxLayoutAlign="center center" class="faster">
-                                                        <h4 style="margin-bottom: 0;">-{{ model[1].value - model[0].value | time: '' }}</h4>
-                                                        <mat-icon style="font-size: 11pt; margin-top: 2px;">trending_down</mat-icon>
-                                                    </div>
-                                                    <div class="center" *ngIf="model[1].value < model[0].value" fxLayout fxLayoutAlign="center center" class="slower">
-                                                        <h4 style="margin-bottom: 0;">+{{ model[0].value - model[1].value | time: '' }}</h4>
-                                                        <mat-icon style="font-size: 11pt; margin-top: 2px;">trending_up</mat-icon>
-                                                    </div>
+                                                <div *ngFor="let m of model">
+                                                    <h3 style="margin-bottom: 0;">{{ m.series }}: {{ m.value | time }}</h3>
                                                 </div>
                                             </ng-template>
                                         </ngx-charts-line-chart>

@@ -11,4 +11,6 @@ public class AverageLap
     public Track Track { get; set; }
     
     public double AverageFastestLap { get; set; }
+
+    public TrackCondition TrackCondition { get; set; }
 }

@@ -16,6 +16,7 @@ public class MotecParser : IMotecParser
 
     private readonly Dictionary<string, string> _validCars = new Dictionary<string, string>()
     {
+        // GT3
         { "V12 Vantage GT3", "GT3"},
         { "V8 Vantage GT3", "GT3"},
         { "R8 LMS", "GT3" },
@@ -43,6 +44,7 @@ public class MotecParser : IMotecParser
         { "991ii GT3 R EVO", "GT3" },
         { "Gallardo REX", "GT3" },
 
+        // GT4
         { "A110 GT4", "GT4" },
         { "V8 Vantage GT4", "GT4" },
         { "R8 GT4", "GT4" },
@@ -55,14 +57,18 @@ public class MotecParser : IMotecParser
         { "AMG GT4", "GT4" },
         { "718 Cayman GT4 MR", "GT4" },
 
+        // CUP
         { "991II GT3 Cup", "Cup" },
         { "992 GT3 Cup", "Cup" },
 
+        // Super Trofeo
         { "Huracan ST", "ST" },
         { "Huracan ST Evo2", "ST" },
 
+        // Challenge
         { "488 Challenge Evo", "CHL" },
 
+        // TCX
         { "M2 CS Racing", "TCX" },
     };
 
@@ -70,9 +76,11 @@ public class MotecParser : IMotecParser
     {
         { "barcelona", "Barcelona" },
         { "brands_hatch", "Brands Hatch" },
+        { "cota", "Circuit of the Americas" },
         { "donington", "Donington" },
         { "hungaroring", "Hungaroring" },
         { "imola", "Imola" },
+        { "indianapolis", "Indianapolis" },
         { "kyalami", "Kyalami" },
         { "laguna_seca", "Laguna Seca" },
         { "misano", "Misano" },
@@ -85,6 +93,7 @@ public class MotecParser : IMotecParser
         { "silverstone", "Silverstone" },
         { "oulton_park", "Oulton Park" },
         { "suzuka", "Suzuka" },
+        { "watkins_glen", "Watkins Glen" },
         { "zandvoort", "Zandvoort" },
         { "zolder", "Zolder" }
     };

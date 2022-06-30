@@ -54,7 +54,8 @@ CREATE TABLE AverageLaps (
   CarId int NOT NULL,
   TrackId int NOT NULL,
   AverageFastestLap double NOT NULL,
-  PRIMARY KEY (CarId,TrackId),
+  TrackCondition int,
+  PRIMARY KEY (CarId,TrackId,TrackCondition),
   KEY IX_AverageLaps_TrackId (TrackId),
   CONSTRAINT FK_AverageLaps_Cars_CarId FOREIGN KEY (CarId) REFERENCES Cars (Id) ON DELETE CASCADE,
   CONSTRAINT FK_AverageLaps_Tracks_TrackId FOREIGN KEY (TrackId) REFERENCES Tracks (Id) ON DELETE CASCADE

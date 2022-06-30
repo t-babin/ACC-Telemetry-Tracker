@@ -28,7 +28,8 @@ public class MappingProfile : Profile
         CreateMap<AverageLap, AverageLapDto>()
             .ForMember(d => d.Car, opt => opt.MapFrom(m => m.Car.Name))
             .ForMember(d => d.TrackName, opt => opt.MapFrom(m => m.Track.Name))
-            .ForMember(d => d.FastestLap, opt => opt.MapFrom(m => m.AverageFastestLap));
+            .ForMember(d => d.FastestLap, opt => opt.MapFrom(m => m.AverageFastestLap))
+            .ForMember(d => d.TrackCondition, opt => opt.MapFrom(m => m.TrackCondition.ToString()));
 
         CreateMap<Audit, AuditDto>()
             .ForMember(a => a.EventType, opt => opt.MapFrom(au => au.EventType.ToString()))

@@ -35,7 +35,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult> GetAllUsers()
     {
-        return Ok(_mapper.Map<IEnumerable<UserDto>>(await _context.Users.Include(u => u.MotecFiles).ToListAsync()));
+        return Ok(_mapper.Map<IEnumerable<UserDto>>(await _context.Users.Include(u => u.MotecFiles).OrderBy(u => u.ServerName).ToListAsync()));
     }
 
     /// <summary>

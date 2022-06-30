@@ -63,8 +63,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   @ViewChild(ReportsComponent)
   reports!: ReportsComponent;
 
-  colorScheme = {
-    domain: ['#DA4D1A', '#3F599F', '#10152C']
+  colourScheme = {
+    domain: ['#DA4D1A', '#EE8F6D', '#3F599F', '#6D85C5', '#10152C', '#314087', '#7CB4B8', '#E8DB7D']
   };
 
   yAxisTickFormatting = (value: any) => this.timePipe.transform(value);
@@ -94,7 +94,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       cars: this.apiService.getCars(),
       tracks: this.apiService.getTracks(),
       users: this.apiService.getUsers(),
-      count: this.apiService.getFileCount()
+      count: this.apiService.getFileCount(this.selectedCars.value, this.selectedTracks.value, this.selectedUsers.value)
     }).subscribe({
       next: (value) => {
         this.motecFiles = value.files;
@@ -184,12 +184,17 @@ export class DashboardComponent implements OnInit, AfterViewInit {
           }).subscribe({
             next: (v) => {
               this.processingUpload = false;
-              this.reload();
-              this.apiService.notify(updatedFile.id)
-                .subscribe();
-                this.uploadComment = '';
-                this.uploadTrackConditions = '';
-              this.messagingService.pushMessage({ message: `Successfully uploaded ${updatedFile.carName} / ${updatedFile.trackName} MoTeC data`, type: 'success' });
+              forkJoin({
+                avg: this.apiService.updateCarAverageTime(),
+                notify: this.apiService.notify(updatedFile.id)
+              }).subscribe({
+                next: (v) => {
+                  this.reload();
+                  this.uploadComment = '';
+                  this.uploadTrackConditions = '';
+                  this.messagingService.pushMessage({ message: `Successfully uploaded ${updatedFile.carName} / ${updatedFile.trackName} MoTeC data`, type: 'success' });
+                }
+              });
             }
           });
         },
@@ -281,8 +286,13 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     this.apiService.updateFileConditions(updatedFile)
       .subscribe({
         next: () => {
-          this.messagingService.pushMessage({ message: `Successfully updated track conditions`, type: 'success' });
-          this.reload();
+          this.apiService.updateCarAverageTime()
+            .subscribe({
+              next: () => {
+                this.messagingService.pushMessage({ message: `Successfully updated track conditions`, type: 'success' });
+                this.reload();
+              }
+            });
         },
         error: (e) => {
         }

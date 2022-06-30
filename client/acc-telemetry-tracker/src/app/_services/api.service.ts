@@ -78,6 +78,10 @@ export class ApiService {
         return this.httpClient.put<any>(`${this.API_BASE_URL}/api/motec/${updatedFile.id}/conditions`, body);
     }
 
+    updateCarAverageTime(): Observable<any> {
+        return this.httpClient.post<any>(`${this.API_BASE_URL}/api/motec/average`, null);
+    }
+
     getCars(): Observable<Car[]> {
         return this.httpClient.get<Car[]>(`${this.API_BASE_URL}/api/motec/cars`);
     }
@@ -90,12 +94,8 @@ export class ApiService {
         return this.httpClient.get<MotecStat[]>(`${this.API_BASE_URL}/api/motec/stats`);
     }
 
-    getMotecAverageTrackStats(trackId: number): Observable<MotecLapStat[]> {
-        return this.httpClient.get<MotecLapStat[]>(`${this.API_BASE_URL}/api/motec/stats/track/average/${trackId}`);
-    }
-
-    getMotecFastestTrackStats(trackId: number): Observable<any[]> {
-        return this.httpClient.get<any[]>(`${this.API_BASE_URL}/api/motec/stats/track/fastest/${trackId}`);
+    getMotecTrackStats(): Observable<MotecLapStat[]> {
+        return this.httpClient.get<MotecLapStat[]>(`${this.API_BASE_URL}/api/motec/stats/laps`);
     }
 
     getUsers(): Observable<User[]> {
@@ -106,8 +106,18 @@ export class ApiService {
         return this.httpClient.put<any>(`${this.API_BASE_URL}/api/user`, { users: users });
     }
 
-    getFileCount(): Observable<number> {
-        return this.httpClient.get<number>(`${this.API_BASE_URL}/api/motec/count`);
+    getFileCount(carIds?: number[], trackIds?: number[], userIds?: number[]): Observable<number> {
+        let params = new HttpParams();
+        if (carIds) {
+            carIds.forEach(c => params = params.append('carIds', c));
+        }
+        if (trackIds) {
+            trackIds.forEach(c => params = params.append('trackIds', c));
+        }
+        if (userIds) {
+            userIds.forEach(c => params = params.append('userIds', c));
+        }
+        return this.httpClient.get<number>(`${this.API_BASE_URL}/api/motec/count`, { params: params });
     }
 
     getAuditLog(): Observable<Audit[]> {

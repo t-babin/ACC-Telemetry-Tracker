@@ -107,6 +107,7 @@
                     <td mat-cell *matCellDef="let element">{{ element.numberOfLaps}}</td>
                 </ng-container>
 
+                <!-- TODO also show the delta to the average fastest here? -->
                 <ng-container matColumnDef="fastestLap">
                     <th mat-header-cell *matHeaderCellDef>
                         <div fxLayout fxLayoutAlign="center center">
@@ -120,7 +121,7 @@
                 <ng-container matColumnDef="trackCondition">
                     <th mat-header-cell *matHeaderCellDef>Conditions</th>
                     <td mat-cell *matCellDef="let element">
-                        <div *ngIf="element.username === authService.userValue?.username && element.editingConditions; else editConditions">
+                        <div *ngIf="(element.username === authService.userValue?.username || authService.userValue?.role === 'admin') && element.editingConditions; else editConditions">
                             <div fxLayout fxLayoutAlign="center center">
                                 <mat-select [(ngModel)]="element.changedTrackConditions" (selectionChange)="onConditionsChanged($event, element)">
                                     <mat-option [value]="'Green'">Green</mat-option>
@@ -141,7 +142,7 @@
                         <ng-template #editConditions>
                             <div fxLayout fxLayoutAlign="center center">
                                 <p style="margin-right: 5px;">{{ element.trackConditions }}</p>
-                                <mat-icon *ngIf="element.username === authService.userValue?.username" 
+                                <mat-icon *ngIf="element.username === authService.userValue?.username || authService.userValue?.role === 'admin'" 
                                     class="comment-update clickable"
                                     (click)="element.editingConditions = !element.editingConditions">edit</mat-icon>
                             </div>
@@ -181,7 +182,7 @@
                         <ng-template #commentText>
                             <div fxLayout fxLayoutAlign="center center">
                                 {{ element.comment }}
-                                <mat-icon *ngIf="element.username === authService.userValue?.username" 
+                                <mat-icon *ngIf="element.username === authService.userValue?.username || authService.userValue?.role === 'admin'" 
                                     class="comment-update clickable"
                                     (click)="element.editingComment = !element.editingComment">edit</mat-icon>
                             </div>
@@ -306,7 +307,7 @@
                                         [xAxis]="true"
                                         [yAxis]="true"
                                         [showGridLines]="true"
-                                        [scheme]="colorScheme"
+                                        [scheme]="colourScheme"
                                         [referenceLines]="referenceLines"
                                         [showRefLines]="true"
                                         [yScaleMin]="fastestLap() * 0.99"

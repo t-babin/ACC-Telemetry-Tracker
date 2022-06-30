@@ -67,57 +67,18 @@ public class MotecController : ControllerBase
         }
 
         var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
-
-        var files = _context.MotecFiles
-            .AsNoTracking()
-            .Include(m => m.Car)
-            .Include(m => m.Track)
-            .Include(m => m.User)
-            .AsQueryable();
-
         _logger.LogInformation($"User [{userId}] is requesting all Motec files");
-
-        if (carIds is not null && carIds.Count() > 0)
+        var result = await GetMotecFiles(carIds, trackIds, userIds);
+        if (result.result is not null)
         {
-            _logger.LogInformation($"Filtering motec files for cars [{string.Join(",", carIds)}]");
-            var unknown = carIds.Except(await _context.Cars.AsNoTracking().Select(c => c.Id).ToListAsync());
-            if (unknown.Any())
-            {
-                _logger.LogWarning($"At least of the car IDs is not found [{string.Join(",", unknown)}]");
-                return NotFound();
-            }
-            files = files.Where(f => carIds.Contains(f.CarId));
-        }
-
-        if (trackIds is not null && trackIds.Count() > 0)
-        {
-            _logger.LogInformation($"Filtering motec files for tracks [{string.Join(",", trackIds)}]");
-            var unknown = trackIds.Except(await _context.Tracks.AsNoTracking().Select(c => c.Id).ToListAsync());
-            if (unknown.Any())
-            {
-                _logger.LogWarning($"At least of the track IDs is not found [{string.Join(",", unknown)}]");
-                return NotFound();
-            }
-            files = files.Where(f => trackIds.Contains(f.TrackId));
-        }
-
-        if (userIds is not null && userIds.Count() > 0)
-        {
-            _logger.LogInformation($"Filtering motec files for users [{string.Join(",", userIds)}]");
-            var unknown = userIds.Except(await _context.Users.AsNoTracking().Select(c => c.Id).ToListAsync());
-            if (unknown.Any())
-            {
-                _logger.LogWarning($"At least of the user IDs is not found [{string.Join(",", unknown)}]");
-                return NotFound();
-            }
-            files = files.Where(f => userIds.Contains(f.UserId));
+            return result.result;
         }
 
         List<Datastore.Models.MotecFile> motecFiles;
         if (!string.IsNullOrEmpty(sortOn))
         {
             var sort = sortOn.Split("-");
-            motecFiles = await files.ToListAsync();
+            motecFiles = await result.files!.ToListAsync();
             switch (sort[0].ToLower())
             {
                 case "track":
@@ -160,7 +121,7 @@ public class MotecController : ControllerBase
         }
         else
         {
-            motecFiles = await files
+            motecFiles = await result.files!
                 .OrderBy(m => m.Track.Name)
                     .ThenBy(m => m.Car.Name)
                         .ThenBy(m => m.FastestLap)
@@ -177,9 +138,16 @@ public class MotecController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpGet("count", Name = "GetMotecFileCount")]
-    public async Task<ActionResult> GetFileCount()
+    public async Task<ActionResult> GetFileCount([FromQuery] IEnumerable<int>? carIds, [FromQuery] IEnumerable<int>? trackIds,
+        [FromQuery] IEnumerable<long>? userIds)
     {
-        return Ok(await _context.MotecFiles.AsNoTracking().CountAsync());
+        var result = await GetMotecFiles(carIds, trackIds, userIds);
+        if (result.result is not null)
+        {
+            return result.result;
+        }
+
+        return Ok(await result.files!.AsNoTracking().CountAsync());
     }
 
     /// <summary>
@@ -189,7 +157,7 @@ public class MotecController : ControllerBase
     [HttpGet("cars", Name = "GetAllCars")]
     public async Task<ActionResult> GetAlLCars()
     {
-        return Ok(_mapper.Map<IEnumerable<CarDto>>(await _context.MotecFiles.AsNoTracking().Include(m => m.Car).Select(m => m.Car).Distinct().ToListAsync()));
+        return Ok(_mapper.Map<IEnumerable<CarDto>>(await _context.MotecFiles.AsNoTracking().Include(m => m.Car).Select(m => m.Car).Distinct().OrderBy(c => c.Name).ToListAsync()));
     }
 
     /// <summary>
@@ -199,7 +167,7 @@ public class MotecController : ControllerBase
     [HttpGet("tracks", Name = "GetAllTracks")]
     public async Task<ActionResult> GetAlLTracks()
     {
-        return Ok(_mapper.Map<IEnumerable<TrackDto>>(await _context.MotecFiles.AsNoTracking().Include(m => m.Track).Select(m => m.Track).Distinct().ToListAsync()));
+        return Ok(_mapper.Map<IEnumerable<TrackDto>>(await _context.MotecFiles.AsNoTracking().Include(m => m.Track).Select(m => m.Track).Distinct().OrderBy(t => t.Name).ToListAsync()));
     }
 
     /// <summary>
@@ -323,35 +291,9 @@ public class MotecController : ControllerBase
                     };
                     _context.MotecFiles.Add(dbMotecFile);
 
-                    var average = await _context.AverageLaps.FirstOrDefaultAsync(a => a.CarId == dbMotecFile.CarId && a.TrackId == dbMotecFile.TrackId);
-                    if (average is null)
-                    {
-                        _logger.LogInformation($"No average lap found for car [{dbMotecFile.CarId}] track [{dbMotecFile.TrackId}]");
-                        _context.AverageLaps.Add(new AverageLap { TrackId = dbMotecFile.TrackId, CarId = dbMotecFile.CarId, AverageFastestLap = dbMotecFile.FastestLap });
-                    }
-                    else
-                    {
-                        _logger.LogInformation($"Existing average lap for car [{dbMotecFile.CarId}] track [{dbMotecFile.TrackId}] -- [{average.AverageFastestLap}]");
-                        var existingLaps = await _context.MotecFiles
-                            .AsNoTracking()
-                            .Where(m => m.CarId == dbMotecFile.CarId && m.TrackId == dbMotecFile.TrackId)
-                            .Select(m => m.FastestLap)
-                            .ToListAsync();
-
-                        if (existingLaps is not null && existingLaps.Any())
-                        {
-                            _logger.LogInformation($"Found [{existingLaps.Count}] existing fastest laps");
-                            existingLaps.Add(dbMotecFile.FastestLap);
-                            average.AverageFastestLap = existingLaps.Average();
-                            _logger.LogInformation($"New average laptime [{average.AverageFastestLap}]");
-                        }
-                    }
-
                     await _context.SaveChangesAsync();
 
                     await _auditRepo.PostAuditEvent(EventType.UploadFile, userId, $"Uploaded file [{dbMotecFile.Id}][{dbMotecFile.FileLocation}]", dbMotecFile.Id);
-
-                    // await _discordNotifier.Notify(dbMotecFile, JsonDocument.Parse(userCookie.Value).RootElement.GetProperty("Avatar").GetString());
 
                     return Ok(_mapper.Map<MotecFileDto>(dbMotecFile));
                 }
@@ -664,68 +606,48 @@ public class MotecController : ControllerBase
     }
 
     /// <summary>
-    /// Gets the average fastest laps for each car on the specified track
+    /// Gets the average and fastest lap stats for each track and car
     /// </summary>
-    /// <param name="id">The ID of the track</param>
     /// <returns></returns>
-    [HttpGet("stats/track/average/{id}")]
+    [HttpGet("stats/laps")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> GetAverageMotecTrackStats(int id)
+    public async Task<ActionResult> GetMotecLapStats()
     {
-        if (id < 1)
-        {
-            _logger.LogError($"Tried getting laps from file ID [{id}]");
-            return BadRequest();
-        }
-        var track = await _context.Tracks.FindAsync(id);
-        if (track is null)
-        {
-            _logger.LogError($"The track [{id}] could not be found in the database.");
-            return NotFound();
-        }
-
-        return Ok(_mapper.Map<IEnumerable<AverageLapDto>>(await _context.AverageLaps
-            .AsNoTracking()
-            .Include(a => a.Car)
-            .Include(a => a.Track)
-            .Where(a => a.TrackId == id)
-            .OrderBy(a => a.AverageFastestLap)
-            .ToListAsync()));
-    }
-
-    /// <summary>
-    /// Gets the fastest laps for each car on the specified track
-    /// </summary>
-    /// <param name="id">The ID of the track</param>
-    /// <returns></returns>
-    [HttpGet("stats/track/fastest/{id}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> GetFastestMotecTrackStats(int id)
-    {        
-        if (id < 1)
-        {
-            _logger.LogError($"Tried getting laps from file ID [{id}]");
-            return BadRequest();
-        }
-        var track = await _context.Tracks.FindAsync(id);
-        if (track is null)
-        {
-            _logger.LogError($"The track [{id}] could not be found in the database.");
-            return NotFound();
-        }
-
-        return Ok( await _context.MotecFiles
-            .AsNoTracking()
+        var result = await _context.MotecFiles
             .Include(m => m.Car)
             .Include(m => m.Track)
-            .Where(m => m.TrackId == id)
-            .GroupBy(m => m.Car.Name)
-            .Select(g => new { Name = g.Key, Min = g.Min(x => x.FastestLap) })
-            .ToListAsync());
+            .Where(m => m.TrackCondition != null)
+            .Join(
+                _context.AverageLaps,
+                motec => new { CarId = motec.CarId, TrackId = motec.TrackId, TrackCondition = motec.TrackCondition!.Value },
+                avg => new { CarId = avg.CarId, TrackId = avg.TrackId, TrackCondition = avg.TrackCondition },
+                (motec, avg) => new
+                {
+                    CarName = motec.Car.Name,
+                    CarId = motec.CarId,
+                    TrackName = motec.Track.Name,
+                    TrackId = motec.TrackId,
+                    TrackCondition = avg.TrackCondition,
+                    AverageFastestLap = avg.AverageFastestLap,
+                    FastestLap = motec.FastestLap
+                }
+            )
+            .GroupBy(m => new { m.CarName, m.CarId, m.TrackName, m.TrackId, m.TrackCondition})
+            .Select(m => new MotecStatDto
+            {
+                FastestLap = m.Min(x => x.FastestLap),
+                Car = m.Key.CarName,
+                CarId = m.Key.CarId,
+                AverageFastestLap = m.Min(x => x.AverageFastestLap),
+                TrackCondition = m.Key.TrackCondition.ToString(),
+                Track = m.Key.TrackName,
+                TrackId = m.Key.TrackId
+            })
+            .OrderBy(m => m.Track)
+            .ThenBy(m => m.Car)
+            .ToListAsync();
+        
+        return Ok(result);
     }
 
     /// <summary>
@@ -768,9 +690,9 @@ public class MotecController : ControllerBase
             return NotFound();
         }
 
-        if (motecFromDb.UserId != userValidation.User!.Id)
+        if (!userValidation.User!.Role.Equals("admin") && motecFromDb.UserId != userValidation.User!.Id)
         {
-            _logger.LogInformation($"User [{userValidation.User!.Id}] tried commenting on motec file [{id}] which they didn't submit");
+            _logger.LogInformation($"Non-admin user [{userValidation.User!.Id}] tried commenting on motec file [{id}] which they didn't submit");
             return Unauthorized();
         }
 
@@ -823,9 +745,9 @@ public class MotecController : ControllerBase
             return NotFound();
         }
 
-        if (motecFromDb.UserId != userValidation.User!.Id)
+        if (!userValidation.User!.Role.Equals("admin") && motecFromDb.UserId != userValidation.User!.Id)
         {
-            _logger.LogInformation($"User [{userValidation.User!.Id}] tried commenting on motec file [{id}] which they didn't submit");
+            _logger.LogInformation($"Non-admin user [{userValidation.User!.Id}] tried editing the conditions on motec file [{id}] which they didn't submit");
             return Unauthorized();
         }
 
@@ -863,6 +785,57 @@ public class MotecController : ControllerBase
         return Ok();
     }
 
+
+    /// <summary>
+    /// Updates the average lap time table for the given motec file's car and track
+    /// </summary>
+    /// <param name="id">The ID of the motec file who's car and track average fastest lap time are being updated</param>
+    /// <returns></returns>
+    [HttpPost("average")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> UpdateAverage()
+    {
+        var userValidation = await ValidateUser();
+        if (userValidation.Result != null)
+        {
+            return userValidation.Result;
+        }
+
+        if (string.IsNullOrEmpty(_config.GetValue<string>("SQLITE_DATABASE")))
+        {
+            _logger.LogInformation("Removing all average laps from MYSQL database");
+            await _context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE AverageLaps;");
+        }
+        else
+        {
+            _logger.LogInformation("Removing all average laps from SQLite database");
+            await _context.Database.ExecuteSqlRawAsync("DELETE FROM AverageLaps;");
+        }
+        await _context.SaveChangesAsync();
+
+        var averageLaps = await _context.MotecFiles
+            .Where(m => m.TrackCondition != null)
+            .GroupBy(m => new { m.CarId, m.TrackId, m.TrackCondition })
+            .Select(g => new AverageLap
+            {
+                CarId = g.Key.CarId,
+                TrackId = g.Key.TrackId,
+                TrackCondition = g.Key.TrackCondition!.Value,
+                AverageFastestLap = g.Average(m => m.FastestLap)
+            })
+            .ToListAsync();
+
+        _logger.LogInformation($"Recalculated [{averageLaps.Count}] average laps");
+        
+        await _context.AverageLaps.AddRangeAsync(averageLaps);
+        await _context.SaveChangesAsync();
+
+        return Ok();
+    }
+
     private async Task<(ActionResult? Result, User? User, KeyValuePair<string, string>? Cookie)> ValidateUser()
     {
         var userCookie = HttpContext.Request.Cookies.FirstOrDefault(c => c.Key.Equals("user"));
@@ -880,5 +853,54 @@ public class MotecController : ControllerBase
         }
 
         return (null, user, userCookie);
+    }
+
+    private async Task<(ActionResult? result, IQueryable<Datastore.Models.MotecFile>? files)> GetMotecFiles(IEnumerable<int>? carIds, IEnumerable<int>? trackIds,
+        IEnumerable<long>? userIds)
+    {
+        var files = _context.MotecFiles
+            .AsNoTracking()
+            .Include(m => m.Car)
+            .Include(m => m.Track)
+            .Include(m => m.User)
+            .AsQueryable();
+
+        if (carIds is not null && carIds.Count() > 0)
+        {
+            _logger.LogInformation($"Filtering motec files for cars [{string.Join(",", carIds)}]");
+            var unknown = carIds.Except(await _context.Cars.AsNoTracking().Select(c => c.Id).ToListAsync());
+            if (unknown.Any())
+            {
+                _logger.LogWarning($"At least of the car IDs is not found [{string.Join(",", unknown)}]");
+                return (NotFound(), null);
+            }
+            files = files.Where(f => carIds.Contains(f.CarId));
+        }
+
+        if (trackIds is not null && trackIds.Count() > 0)
+        {
+            _logger.LogInformation($"Filtering motec files for tracks [{string.Join(",", trackIds)}]");
+            var unknown = trackIds.Except(await _context.Tracks.AsNoTracking().Select(c => c.Id).ToListAsync());
+            if (unknown.Any())
+            {
+                _logger.LogWarning($"At least of the track IDs is not found [{string.Join(",", unknown)}]");
+                return (NotFound(), null);
+            }
+            files = files.Where(f => trackIds.Contains(f.TrackId));
+        }
+
+        if (userIds is not null && userIds.Count() > 0)
+        {
+            _logger.LogInformation($"Filtering motec files for users [{string.Join(",", userIds)}]");
+            var unknown = userIds.Except(await _context.Users.AsNoTracking().Select(c => c.Id).ToListAsync());
+            if (unknown.Any())
+            {
+                _logger.LogWarning($"At least of the user IDs is not found [{string.Join(",", unknown)}]");
+                return (NotFound(), null);
+            }
+            files = files.Where(f => userIds.Contains(f.UserId));
+        }
+
+        return (null, files);
     }
 }

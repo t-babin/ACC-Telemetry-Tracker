@@ -8,10 +8,12 @@ public class ParserLogic : IParserLogic
     {
         { "barcelona", new [] { 100, 170 } },
         { "brands_hatch", new [] { 80, 160 } },
+        { "cota", new [] { 120, 200 } },
         { "donington", new [] { 82, 160 } },
         { "hungaroring", new [] { 100, 170 } },
         { "imola", new [] { 99, 165 } },
         { "kyalami", new [] { 96, 170 } },
+        { "indianapolis", new [] { 93, 160 } },
         { "laguna_seca", new [] { 78, 160 } },
         { "misano", new [] { 90, 170 } },
         { "monza", new [] { 103, 170 } },
@@ -23,6 +25,7 @@ public class ParserLogic : IParserLogic
         { "silverstone", new [] { 113, 180 } },
         { "oulton_park", new [] { 90, 170 } },
         { "suzuka", new [] { 115, 180 } },
+        { "watkins_glen", new [] { 101, 170 } },
         { "zandvoort", new [] { 92, 170 } },
         { "zolder", new [] { 85, 165 } }
     };

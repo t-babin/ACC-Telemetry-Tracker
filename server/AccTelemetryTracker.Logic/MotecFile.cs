@@ -9,6 +9,8 @@ public class MotecFile
     
     public DateTime Date { get; set; }
 
+    public string GameVersion { get; set; } = string.Empty;
+    
     public IEnumerable<MotecLap> Laps { get; set; } = new List<MotecLap>();
 }
 

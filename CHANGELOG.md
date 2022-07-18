@@ -1,3 +1,8 @@
+# 1.5
+- Added more charts and metrics
+- Discord notification calls out new fastest laps
+- Added game version for each uploaded file
+
 # 1.4
 - Average fastest laps now consider track conditions
 - Updated charts for the average fastest laps with the various track conditions

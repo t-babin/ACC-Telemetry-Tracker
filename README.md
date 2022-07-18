@@ -35,11 +35,11 @@ Screenshots can be found [here](screenshots/)
 ### Prerequisites
 - [.NET 6 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)
 - [node.js (LTS version)](https://nodejs.org/en/download/)
-- You will need a [Discord Application](https://discord.com/developers/applications) with an OAuth client for the authentication to work.
+- You will need a [Discord Application](https://discord.com/developers/applications) with an OAuth client for the authentication to work. Your Discord Application must also have `<frontend-url>/auth` as a redirect URI (i.e. `http://localhost:4200/auth`)
 
 ### Running the Backend Application
 
-Either update the `server/AccTelemetryTracker.Api/appsettings.json` file with your environment variables, or add them as startup arguments when debugging/running from the cli. See below for the list of mandatory and optional environment variables. Note that the default frontend URL value is `http://localhost:4200`.
+Either update the `server/AccTelemetryTracker.Api/appsettings.json` file with your environment variables, or add them as startup arguments when debugging/running from the cli. See below for the list of mandatory and optional environment variables. Note that the default frontend URL value is `http://localhost:4200`. If using SQLite, the database will be created on startup but no migrations will be applied. If using MySQL you will need to also ensure the database and schema are created from the file `/datastore/init.sql`.
 
 Open a terminal and run:
 ```bash
@@ -105,10 +105,17 @@ Navigate to http://localhost:4200/login in your browser and you should see the l
 ## Running With Docker (preferred)
 A sample docker-compose file is provided. Update with your environment variables and then run the following commands. Note that this has only been tested on a linux environment, YMMV on Windows.
 
+Note that you should also make sure the `client/acc-telemetry-tracker/src/assets/env.js` file has no variable values in it when running via docker.
+
 ```bash
 docker-compose build
 docker-compose up -d
 ```
+
+Backend logs are written to the Docker container console (`docker logs -f acc-telemetry-tracker_api_1`) or are written to files in the directory `/app/logs` inside the same container.
+
+## Database Updates
+I might change this in the future, but currently database schema updates have to be performed manually. MySQL schame update scripts have been provided [here](/datastore/). If you are running this for the first time, your schema will be up to date since it is initiated during the init phase. If you already have a MySQL database initialized using a previous version of the `/datastore/init.sql` script, execute all of the `/datastore/1.*.sql` scripts to update the database.
 
 ## Environment Variables
 

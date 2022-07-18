@@ -94,8 +94,16 @@ export class ApiService {
         return this.httpClient.get<MotecStat[]>(`${this.API_BASE_URL}/api/motec/stats`);
     }
 
-    getMotecTrackStats(): Observable<MotecLapStat[]> {
+    getMotecUserStats(): Observable<MotecStat[]> {
+        return this.httpClient.get<MotecStat[]>(`${this.API_BASE_URL}/api/motec/stats/users`);
+    }
+
+    getMotecLapStats(): Observable<MotecLapStat[]> {
         return this.httpClient.get<MotecLapStat[]>(`${this.API_BASE_URL}/api/motec/stats/laps`);
+    }
+
+    getUserLapStats(): Observable<MotecLapStat[]> {
+        return this.httpClient.get<MotecLapStat[]>(`${this.API_BASE_URL}/api/motec/stats/users/laptimes`);
     }
 
     getUsers(): Observable<User[]> {

@@ -16,7 +16,7 @@ public class DiscordNotifier : IDiscordNotifier
     }
 
     /// <inheritdoc />
-    public async Task Notify(Datastore.Models.MotecFile motecFile, string? avatarUrl)
+    public async Task Notify(Datastore.Models.MotecFile motecFile, string? avatarUrl, bool anyFasterLaps)
     {
         var hookUrl = _config.GetValue<string>("DISCORD_WEBHOOK_URL");
         if (string.IsNullOrEmpty(hookUrl))
@@ -75,11 +75,12 @@ public class DiscordNotifier : IDiscordNotifier
                 embeds = new object[] {
                         new {
                             author = new {
-                                name = $"{motecFile.User.ServerName} has uploaded a new file.",
+                                name = $"{motecFile.User.ServerName} has uploaded a MoTeC file.",
                                 icon_url = string.IsNullOrEmpty(avatarUrl) ? "" : $"https://cdn.discordapp.com/avatars/{motecFile.UserId}/{avatarUrl}.png"
                             },
                             color = 4151711,
-                            fields = fields
+                            fields = fields,
+                            title = anyFasterLaps ? "" : "New fastest lap!"
                         }
                     }
             };

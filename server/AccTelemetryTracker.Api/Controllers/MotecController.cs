@@ -287,11 +287,19 @@ public class MotecController : ControllerBase
                         FileLocation = $"{fileName}.zip",
                         FastestLap = motecFile.Laps.Min(l => l.LapTime),
                         SessionDate = motecFile.Date,
-                        UserId = userId
+                        UserId = userId,
+                        GameVersion = motecFile.GameVersion
                     };
                     _context.MotecFiles.Add(dbMotecFile);
 
                     await _context.SaveChangesAsync();
+
+                    if (await _context.MotecFiles.AnyAsync(m => string.IsNullOrEmpty(m.GameVersion)))
+                    {
+                        var withoutVersion = await _context.MotecFiles.Where(m => string.IsNullOrEmpty(m.GameVersion)).ToListAsync();
+                        _parser.GetGameVersion(withoutVersion);
+                        await _context.SaveChangesAsync();
+                    }
 
                     await _auditRepo.PostAuditEvent(EventType.UploadFile, userId, $"Uploaded file [{dbMotecFile.Id}][{dbMotecFile.FileLocation}]", dbMotecFile.Id);
 
@@ -408,7 +416,7 @@ public class MotecController : ControllerBase
         if (!System.IO.File.Exists(Path.Combine(_storagePage, motecFromDb.FileLocation)))
         {
             _logger.LogError($"The motec file [{motecFromDb.FileLocation}] could not be found on disk");
-            return NotFound("The motec files could not be found on disk");
+            return NotFound(new { Message = "The motec file could not be opened" });
         }
 
         var tempDir = Directory.CreateDirectory(Path.Combine(_storagePage, $"TEMP-{Path.GetFileNameWithoutExtension(motecFromDb.FileLocation)}"));
@@ -598,8 +606,56 @@ public class MotecController : ControllerBase
             .AsNoTracking()
             .Include(m => m.Car)
             .Include(m => m.Track)
-            .Select(m => new { Car = m.Car.Name, CarId = m.CarId, Track = m.Track.Name, TrackId = m.TrackId })
-            .OrderBy(m => m.Track)
+            .GroupBy(m => new { Car = m.Car.Name, CarId = m.CarId, Track = m.Track.Name, TrackId = m.TrackId })
+            .Select(g => new { Car = g.Key.Car, CarId = g.Key.CarId, Track = g.Key.Track, TrackId = g.Key.TrackId, Count = g.Count() })
+            .OrderBy(g => g.Track)
+                .ThenBy(g => g.Car)
+            .ToListAsync();
+        
+        return Ok(data);
+    }
+
+    /// <summary>
+    /// Returns a collection containing the user for each motec file. Used for a chart.
+    /// </summary>
+    /// <returns></returns>
+    [HttpGet("stats/users")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult> GetMotecUserStats()
+    {
+        var data = await _context.MotecFiles
+            .AsNoTracking()
+            .Include(m => m.User)
+            .Include(m => m.Car)
+            .Include(m => m.Track)
+            .GroupBy(m => new { Car = m.Car.Name, CarId = m.CarId, Track = m.Track.Name, TrackId = m.TrackId, User = m.User.ServerName, UserId = m.UserId })
+            .Select(g => new { Car = g.Key.Car, CarId = g.Key.CarId, Track = g.Key.Track, TrackId = g.Key.TrackId, User = g.Key.User, UserId = g.Key.UserId, Count = g.Count() })
+            .OrderBy(g => g.Track)
+                .ThenBy(g => g.Car)
+            .ToListAsync();
+        
+        return Ok(data);
+    }
+
+    /// <summary>
+    /// Returns a collection containing the user for each motec file. Used for a chart.
+    /// </summary>
+    /// <returns></returns>
+    [HttpGet("stats/users/laptimes")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult> GetMotecUserLapStats()
+    {
+        var data = await _context.MotecFiles
+            .AsNoTracking()
+            .Include(m => m.User)
+            .Include(m => m.Car)
+            .Include(m => m.Track)
+            .Where(m => m.TrackCondition.HasValue)
+            .GroupBy(m => new { Car = m.Car.Name, CarId = m.CarId, Track = m.Track.Name, TrackId = m.TrackId, User = m.User.ServerName, UserId = m.UserId, TrackCondition = m.TrackCondition })
+            .Select(g => new { Car = g.Key.Car, CarId = g.Key.CarId, Track = g.Key.Track, TrackId = g.Key.TrackId, User = g.Key.User, UserId = g.Key.UserId, TrackCondition = g.Key.TrackCondition!.ToString(), Laptime = g.Min(x => x.FastestLap) })
+            .OrderBy(g => g.User)
+                .ThenBy(g => g.Track)
+                    .ThenBy(g => g.Car)
             .ToListAsync();
         
         return Ok(data);
@@ -644,7 +700,7 @@ public class MotecController : ControllerBase
                 TrackId = m.Key.TrackId
             })
             .OrderBy(m => m.Track)
-            .ThenBy(m => m.Car)
+                .ThenBy(m => m.Car)
             .ToListAsync();
         
         return Ok(result);
@@ -779,8 +835,13 @@ public class MotecController : ControllerBase
             _logger.LogError($"The motec file with id [{id}] could not be found");
             return NotFound();
         }
+
+        var anyFasterLaps = await _context.MotecFiles
+            .AnyAsync(m => m.TrackId == motecFromDb.TrackId
+                && m.TrackCondition == motecFromDb.TrackCondition
+                && m.FastestLap < motecFromDb.FastestLap);
         
-        await _discordNotifier.Notify(motecFromDb, JsonDocument.Parse(userCookie.Value).RootElement.GetProperty("Avatar").GetString());
+        await _discordNotifier.Notify(motecFromDb, JsonDocument.Parse(userCookie.Value).RootElement.GetProperty("Avatar").GetString(), anyFasterLaps);
 
         return Ok();
     }

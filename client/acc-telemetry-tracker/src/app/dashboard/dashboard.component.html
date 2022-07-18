@@ -100,8 +100,8 @@
                 <ng-container matColumnDef="numLaps">
                     <th mat-header-cell *matHeaderCellDef>
                         <div fxLayout fxLayoutAlign="center center">
-                            <p>Number of Valid Laps</p>
-                            <mat-icon style="font-size: 14px; margin-top: 4px;" matTooltip="Only laps within a certain time range will be Valid" [matTooltipPosition]="'above'">info</mat-icon>
+                            <p>Valid Laps</p>
+                            <mat-icon style="font-size: 14px; margin-top: 4px;" matTooltip="Only laps within a certain time range will be valid" [matTooltipPosition]="'above'">info</mat-icon>
                         </div>
                     </th>
                     <td mat-cell *matCellDef="let element">{{ element.numberOfLaps}}</td>
@@ -116,6 +116,11 @@
                         </div>
                     </th>
                     <td mat-cell *matCellDef="let element">{{ element.fastestLap | time }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="version">
+                    <th mat-header-cell *matHeaderCellDef>Patch</th>
+                    <td mat-cell *matCellDef="let element">{{ element.gameVersion }}</td>
                 </ng-container>
 
                 <ng-container matColumnDef="trackCondition">

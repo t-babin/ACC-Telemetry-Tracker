@@ -32,6 +32,9 @@ public class MotecFileDto
     
     [AllowNull]
     public string TrackConditions { get; set; }
+
+    [AllowNull]
+    public string GameVersion { get; set; }
     
     public IEnumerable<MotecLap> Laps { get; set; } = new List<MotecLap>();
 }

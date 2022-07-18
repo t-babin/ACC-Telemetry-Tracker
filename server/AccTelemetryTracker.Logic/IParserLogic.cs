@@ -9,4 +9,10 @@ public interface IParserLogic
     /// <exception cref="AccTelemetryTracker.Logic.MotecParseException">Thrown when a MoTeC file can't be parsed correctly</exception>
     /// <exception cref="System.IO.FileNotFoundException">Thrown when the supplied file paths can't be found</exception>
     Task<MotecFile> ParseFilesAsync(IEnumerable<string> files);
+
+    /// <summary>
+    /// Sets the game patch version for all supplied files
+    /// </summary>
+    /// <param name="files">Collection of motec data files</param>
+    void GetGameVersion(IEnumerable<Datastore.Models.MotecFile> files);
 }

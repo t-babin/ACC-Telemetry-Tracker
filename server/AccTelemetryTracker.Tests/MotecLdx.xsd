@@ -1,59 +1,74 @@
 <xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="LDXFile" type="LDXFileType"/>
-  <xs:complexType name="MarkerType">
-    <xs:simpleContent>
-      <xs:extension base="xs:string">
-        <xs:attribute type="xs:byte" name="Version" use="required"/>
-        <xs:attribute type="xs:string" name="ClassName" use="required"/>
-        <xs:attribute type="xs:string" name="Name" use="required"/>
-        <xs:attribute type="xs:byte" name="Flags" use="required"/>
-        <xs:attribute type="xs:float" name="Time" use="required"/>
-      </xs:extension>
-    </xs:simpleContent>
-  </xs:complexType>
-  <xs:complexType name="MarkerGroupType">
-    <xs:sequence>
-      <xs:element type="MarkerType" name="Marker" maxOccurs="unbounded" minOccurs="0"/>
-    </xs:sequence>
-    <xs:attribute type="xs:string" name="Name"/>
-    <xs:attribute type="xs:byte" name="Index"/>
-  </xs:complexType>
-  <xs:complexType name="MarkerBlockType">
-    <xs:sequence>
-      <xs:element type="MarkerGroupType" name="MarkerGroup"/>
-    </xs:sequence>
-  </xs:complexType>
-  <xs:complexType name="LayerType">
-    <xs:sequence>
-      <xs:element type="MarkerBlockType" name="MarkerBlock"/>
-      <xs:element type="xs:string" name="RangeBlock"/>
-    </xs:sequence>
-  </xs:complexType>
-  <xs:complexType name="StringType">
-    <xs:simpleContent>
-      <xs:extension base="xs:string">
-        <xs:attribute type="xs:string" name="Id" use="required"/>
-        <xs:attribute type="xs:string" name="Value" use="required"/>
-      </xs:extension>
-    </xs:simpleContent>
-  </xs:complexType>
-  <xs:complexType name="DetailsType">
-    <xs:sequence>
-      <xs:element type="StringType" name="String" maxOccurs="unbounded" minOccurs="0"/>
-    </xs:sequence>
-  </xs:complexType>
-  <xs:complexType name="LayersType">
-    <xs:sequence>
-      <xs:element type="LayerType" name="Layer"/>
-      <xs:element type="DetailsType" name="Details"/>
-    </xs:sequence>
-  </xs:complexType>
-  <xs:complexType name="LDXFileType">
-    <xs:sequence>
-      <xs:element type="LayersType" name="Layers"/>
-    </xs:sequence>
-    <xs:attribute type="xs:string" name="Locale"/>
-    <xs:attribute type="xs:string" name="DefaultLocale"/>
-    <xs:attribute type="xs:float" name="Version"/>
-  </xs:complexType>
+  <xs:element name="LDXFile">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Videos" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element type="xs:string" name="View"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="Layers">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Layer">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="MarkerBlock">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="MarkerGroup">
+                            <xs:complexType>
+                              <xs:sequence>
+                                <xs:element name="Marker" maxOccurs="unbounded" minOccurs="0">
+                                  <xs:complexType>
+                                    <xs:simpleContent>
+                                      <xs:extension base="xs:string">
+                                        <xs:attribute type="xs:byte" name="Version" use="optional"/>
+                                        <xs:attribute type="xs:string" name="ClassName" use="optional"/>
+                                        <xs:attribute type="xs:string" name="Name" use="optional"/>
+                                        <xs:attribute type="xs:string" name="Flags" use="optional"/>
+                                        <xs:attribute type="xs:float" name="Time" use="optional"/>
+                                      </xs:extension>
+                                    </xs:simpleContent>
+                                  </xs:complexType>
+                                </xs:element>
+                              </xs:sequence>
+                              <xs:attribute type="xs:string" name="Name" use="required"/>
+                              <xs:attribute type="xs:byte" name="Index" use="required"/>
+                            </xs:complexType>
+                          </xs:element>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element type="xs:string" name="RangeBlock" minOccurs="0"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="Details">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="String" maxOccurs="unbounded" minOccurs="0">
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="xs:string">
+                            <xs:attribute type="xs:string" name="Id" use="optional"/>
+                            <xs:attribute type="xs:string" name="Value" use="optional"/>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute type="xs:string" name="Locale"/>
+      <xs:attribute type="xs:string" name="DefaultLocale"/>
+      <xs:attribute type="xs:float" name="Version"/>
+    </xs:complexType>
+  </xs:element>
 </xs:schema>

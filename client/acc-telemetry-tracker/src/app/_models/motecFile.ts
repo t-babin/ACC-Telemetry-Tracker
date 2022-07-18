@@ -13,6 +13,7 @@ export interface MotecFile {
     editingComment: boolean;
     editingConditions: boolean;
     trackConditions: string;
+    gameVersion: string;
     changedTrackConditions: string;
     laps: MotecLap[];
 }
@@ -35,10 +36,14 @@ export interface MotecStat {
     carId: number;
     track: string;
     trackId: number;
+    user: string;
+    userId: string;
+    count: number;
 }
 
 export interface MotecLapStat extends MotecStat {
     fastestLap: number;
     averageFastestLap: number;
     trackCondition: string;
+    laptime: number;
 }

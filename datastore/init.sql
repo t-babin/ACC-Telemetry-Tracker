@@ -40,6 +40,7 @@ CREATE TABLE MotecFiles (
   FileLocation text,
   Comment text,
   TrackCondition int,
+  GameVersion text,
   PRIMARY KEY (Id),
   KEY IX_MotecFiles_CarId (CarId),
   KEY IX_MotecFiles_TrackId (TrackId),

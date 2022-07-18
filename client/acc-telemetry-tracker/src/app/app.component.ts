@@ -14,7 +14,6 @@ export class AppComponent {
 
   constructor(public authService: AuthenticationService, public router: Router) {
     this.authService.user.subscribe(u => this.user = u);
-    // this.router.
   }
 
   getUserImage(): string {

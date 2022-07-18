@@ -51,7 +51,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   deleteId = 0;
   processingUpload = false;
   referenceLines: any[] = [];
-  tableHeaders = ['car', 'carClass', 'track', 'user', 'numLaps', 'fastestLap', 'trackCondition', 'dateLoaded', 'comment', 'showLaps', 'download'];
+  tableHeaders = ['car', 'carClass', 'track', 'user', 'numLaps', 'fastestLap', 'trackCondition', 'dateLoaded', 'version', 'comment', 'showLaps', 'download'];
   uploadFileName = '';
   uploadTrackConditions = '';
   uploadComment = '';

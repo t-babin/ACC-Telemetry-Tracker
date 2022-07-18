@@ -28,6 +28,8 @@ public class MotecFile
     
     public string FileLocation { get; set; } = string.Empty;
 
+    public string GameVersion { get; set; }
+
     public TrackCondition? TrackCondition { get; set; }
     
     public List<Audit> AuditEvents { get; set; }

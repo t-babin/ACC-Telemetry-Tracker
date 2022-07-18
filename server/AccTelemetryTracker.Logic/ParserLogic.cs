@@ -29,6 +29,31 @@ public class ParserLogic : IParserLogic
         { "zandvoort", new [] { 92, 170 } },
         { "zolder", new [] { 85, 165 } }
     };
+
+    private readonly Dictionary<(DateTime Start, DateTime End), string> _gameVersions = new Dictionary<(DateTime Start, DateTime End), string>()
+    {
+        { (new DateTime(), new DateTime(2021, 06, 29)), "pre-1.7.12" },
+        { (new DateTime(2021, 06, 30), new DateTime(2021, 08, 22)), "1.7.12" },
+        { (new DateTime(2021, 08, 23), new DateTime(2021, 09, 08)), "1.7.13" },
+        { (new DateTime(2021, 09, 09), new DateTime(2021, 10, 06)), "1.7.14" },
+        { (new DateTime(2021, 10, 07), new DateTime(2021, 11, 23)), "1.7.15" },
+        { (new DateTime(2021, 11, 24), new DateTime(2021, 11, 24)), "1.8.0"  },
+        { (new DateTime(2021, 11, 25), new DateTime(2021, 11, 25)), "1.8.1"  },
+        { (new DateTime(2021, 11, 26), new DateTime(2021, 12, 01)), "1.8.2"  },
+        { (new DateTime(2021, 12, 02), new DateTime(2021, 12, 02)), "1.8.5"  },
+        { (new DateTime(2021, 12, 03), new DateTime(2021, 12, 08)), "1.8.6"  },
+        { (new DateTime(2021, 12, 09), new DateTime(2021, 12, 14)), "1.8.7"  },
+        { (new DateTime(2021, 12, 15), new DateTime(2022, 01, 06)), "1.8.8"  },
+        { (new DateTime(2022, 01, 07), new DateTime(2022, 01, 17)), "1.8.9"  },
+        { (new DateTime(2022, 01, 18), new DateTime(2022, 02, 06)), "1.8.10" },
+        { (new DateTime(2022, 02, 07), new DateTime(2022, 03, 22)), "1.8.11" },
+        { (new DateTime(2022, 03, 23), new DateTime(2022, 04, 01)), "1.8.12" },
+        { (new DateTime(2022, 04, 02), new DateTime(2022, 04, 27)), "1.8.13" },
+        { (new DateTime(2022, 04, 28), new DateTime(2022, 06, 29)), "1.8.14" },
+        { (new DateTime(2022, 06, 30), new DateTime(2022, 07, 05)), "1.8.15" },
+        { (new DateTime(2022, 07, 06), new DateTime(2022, 07, 12)), "1.8.16" },
+        { (new DateTime(2022, 07, 13), DateTime.Today), "1.8.17" },
+    };
     private readonly IMotecParser _parser;
     private readonly ILogger<ParserLogic> _logger;
 
@@ -79,6 +104,7 @@ public class ParserLogic : IParserLogic
 
         motecFile.Laps = motecFile.Laps.Where(l => l.LapTime > _validTimes[motecFile.Track.ToLower().Replace(" ", "_")][0]
             && l.LapTime < _validTimes[motecFile.Track.ToLower().Replace(" ", "_")][1]);
+        motecFile.GameVersion = _gameVersions.FirstOrDefault(g => motecFile.Date.Date >= g.Key.Start && motecFile.Date.Date <= g.Key.End).Value;
         _logger.LogInformation($"Parsed [{motecFile.Laps.Count()}] valid laps from the file [{ldxPath}]");
 
         if (!motecFile.Laps.Any())
@@ -88,6 +114,14 @@ public class ParserLogic : IParserLogic
         }
 
         return motecFile;
+    }
+
+    public void GetGameVersion(IEnumerable<Datastore.Models.MotecFile> files)
+    {
+        foreach (var file in files)
+        {
+            file.GameVersion = _gameVersions.FirstOrDefault(g => file.SessionDate.Date >= g.Key.Start && file.SessionDate.Date <= g.Key.End).Value;
+        }
     }
 
     private string ValidateExtension(IEnumerable<string> files, string extension)

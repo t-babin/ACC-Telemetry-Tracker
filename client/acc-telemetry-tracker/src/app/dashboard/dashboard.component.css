@@ -85,7 +85,7 @@ th.mat-header-cell:first-of-type, td.mat-cell:first-of-type, td.mat-footer-cell:
 .mat-column-numLaps {
 	word-wrap: break-word !important;
     white-space: unset !important;
-    width: 14% !important;
+    width: 8% !important;
     overflow-wrap: break-word;
     word-break: break-word;
 

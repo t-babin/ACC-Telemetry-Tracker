@@ -297,6 +297,7 @@ public class MotecController : ControllerBase
                     if (await _context.MotecFiles.AnyAsync(m => string.IsNullOrEmpty(m.GameVersion)))
                     {
                         var withoutVersion = await _context.MotecFiles.Where(m => string.IsNullOrEmpty(m.GameVersion)).ToListAsync();
+                        _logger.LogInformation($"Found [{withoutVersion.Count}] files without a game version set. Setting");
                         _parser.GetGameVersion(withoutVersion);
                         await _context.SaveChangesAsync();
                     }

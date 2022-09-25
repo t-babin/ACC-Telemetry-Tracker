@@ -28,15 +28,15 @@
                                         <xs:attribute type="xs:byte" name="Version" use="optional"/>
                                         <xs:attribute type="xs:string" name="ClassName" use="optional"/>
                                         <xs:attribute type="xs:string" name="Name" use="optional"/>
-                                        <xs:attribute type="xs:string" name="Flags" use="optional"/>
+                                        <xs:attribute type="xs:byte" name="Flags" use="optional"/>
                                         <xs:attribute type="xs:float" name="Time" use="optional"/>
                                       </xs:extension>
                                     </xs:simpleContent>
                                   </xs:complexType>
                                 </xs:element>
                               </xs:sequence>
-                              <xs:attribute type="xs:string" name="Name" use="required"/>
-                              <xs:attribute type="xs:byte" name="Index" use="required"/>
+                              <xs:attribute type="xs:string" name="Name"/>
+                              <xs:attribute type="xs:byte" name="Index"/>
                             </xs:complexType>
                           </xs:element>
                         </xs:sequence>
@@ -44,9 +44,10 @@
                     </xs:element>
                     <xs:element type="xs:string" name="RangeBlock" minOccurs="0"/>
                   </xs:sequence>
+                  <xs:attribute type="xs:string" name="LayerName" use="optional"/>
                 </xs:complexType>
               </xs:element>
-              <xs:element name="Details">
+              <xs:element name="Details" minOccurs="0">
                 <xs:complexType>
                   <xs:sequence>
                     <xs:element name="String" maxOccurs="unbounded" minOccurs="0">

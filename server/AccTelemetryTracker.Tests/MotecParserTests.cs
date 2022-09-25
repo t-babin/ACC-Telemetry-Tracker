@@ -77,9 +77,9 @@ public class Tests
         Assert.Multiple(() =>
         {
             Assert.IsNotNull(file);
-            Assert.AreEqual(file.Car, car);
-            Assert.AreEqual(file.Track, track);
-            Assert.AreEqual(file.Date.ToString("dd/MM/yyyyHH:mm:ss", CultureInfo.InvariantCulture), date);
+            Assert.AreEqual(car, file.Car);
+            Assert.AreEqual(track, file.Track);
+            Assert.AreEqual(date, file.Date.ToString("dd/MM/yyyyHH:mm:ss", CultureInfo.InvariantCulture));
         });
     }
 
@@ -94,7 +94,10 @@ public class Tests
     static object[] ValidFiles =
     {
         "Valid.ldx",
-        "Kyalami-porsche_991ii_gt3_r-3-2021.12.15-21.43.22.ldx"
+        "Kyalami-porsche_991ii_gt3_r-3-2021.12.15-21.43.22.ldx",
+        "Laguna_Seca-porsche_991ii_gt3_r-23-2022.09.25-19.24.55.ldx",
+        "Laguna_Seca-mercedes_amg_gt3_evo-14-2022.09.25-16.32.15.ldx",
+        "Laguna_Seca-porsche_991ii_gt3_r-19-2022.09.25-12.34.28.ldx"
     };
 
     static object[] ValidLdFiles =

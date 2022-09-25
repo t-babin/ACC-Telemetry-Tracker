@@ -1,3 +1,7 @@
+# 1.5.1
+- Added dates for new ACC game version 1.8.18
+- Fixed issue when trying to upload
+
 # 1.5
 - Added more charts and metrics
 - Discord notification calls out new fastest laps

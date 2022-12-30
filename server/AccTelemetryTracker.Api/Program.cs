@@ -20,6 +20,9 @@ try
     builder.Host.UseSerilog((ctx, lc) => 
     {
         lc.MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", Serilog.Events.LogEventLevel.Warning);
+        lc.MinimumLevel.Override("Microsoft.AspNetCore.Routing.EndpointMiddleware", Serilog.Events.LogEventLevel.Warning);
+        lc.MinimumLevel.Override("Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor", Serilog.Events.LogEventLevel.Warning);
+        lc.MinimumLevel.Override("Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker", Serilog.Events.LogEventLevel.Warning);
         lc.WriteTo.Console()
         .ReadFrom.Configuration(ctx.Configuration);
     });

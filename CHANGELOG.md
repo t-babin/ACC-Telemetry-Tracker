@@ -1,3 +1,6 @@
+# 1.5.2
+- Added dates for new ACC game version 1.8.21
+
 # 1.5.1
 - Added dates for new ACC game version 1.8.18
 - Fixed issue when trying to upload

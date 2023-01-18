@@ -55,7 +55,8 @@ public class ParserLogic : IParserLogic
         { (new DateTime(2022, 07, 13), new DateTime(2022, 08, 21)), "1.8.17" },
         { (new DateTime(2022, 08, 22), new DateTime(2022, 11, 15)), "1.8.18" },
         { (new DateTime(2022, 11, 16), new DateTime(2022, 12, 26)), "1.8.19" },
-        { (new DateTime(2022, 12, 27), DateTime.Today.AddHours(23).AddMinutes(59).AddSeconds(59)), "1.8.20" }
+        { (new DateTime(2022, 12, 27), new DateTime(2023, 01, 16)), "1.8.20" },
+        { (new DateTime(2023, 01, 17), DateTime.Today.AddHours(23).AddMinutes(59).AddSeconds(59)), "1.8.21" },
     };
     private readonly IMotecParser _parser;
     private readonly ILogger<ParserLogic> _logger;

@@ -63,7 +63,8 @@
   margin: 0 0 56px; }
 
 .mat-display-3, .mat-typography .mat-display-3 {
-  font: 400 56px/56px Fira Sans Condensed;
+  font: 500 56px/56px Kanit;
+  font-style: italic;
   letter-spacing: -0.0089em;
   margin: 0 0 64px; }
 

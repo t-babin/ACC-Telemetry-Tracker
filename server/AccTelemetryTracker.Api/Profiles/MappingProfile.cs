@@ -17,8 +17,10 @@ public class MappingProfile : Profile
             .ForMember(d => d.TrackConditions, opt => opt.MapFrom(m => m.TrackCondition == null ? string.Empty : m.TrackCondition.ToString()));
             
         CreateMap<Car, CarDto>();
+        CreateMap<Car, AdminCarDto>();
 
         CreateMap<Track, TrackDto>();
+        CreateMap<Track, AdminTrackDto>();
 
         CreateMap<User, UserDto>()
             .ForMember(d => d.FileUploadCount, opt => opt.MapFrom(u => u.MotecFiles.Count));

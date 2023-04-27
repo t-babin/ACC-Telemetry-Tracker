@@ -7,5 +7,35 @@
 }
 
 .chart-container {
-	min-height: 750px;
+	min-height: 700px;
+}
+
+table {
+	background-color: #F6F7EC;
+	border-collapse: collapse;
+	width: 98%;
+	margin-left: 1%;
+}
+
+.mat-cell,
+.mat-header-cell {
+    padding: 2px 5px;
+	color: inherit;
+	border: none;
+}
+
+.mat-cell {
+	font-weight: 300;
+}
+
+.mat-header-cell {
+	font-size: 15px;
+}
+
+th.mat-header-cell:last-of-type, td.mat-cell:last-of-type, td.mat-footer-cell:last-of-type {
+	padding-right: 5px;
+}
+
+th.mat-header-cell:first-of-type, td.mat-cell:first-of-type, td.mat-footer-cell:first-of-type {
+	padding-left: 5px;
 }

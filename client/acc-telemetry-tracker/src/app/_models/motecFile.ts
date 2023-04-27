@@ -47,3 +47,11 @@ export interface MotecLapStat extends MotecStat {
     trackCondition: string;
     laptime: number;
 }
+
+export interface UserMetric extends MotecStat {
+    favouriteCar: string;
+    favouriteTrack: string;
+    numberOfFastestLaps: number;
+    numberOfLaps: number;
+    numberOfUploads: number;
+}

@@ -1,18 +1,18 @@
 <nav>
   <div fxLayout fxLayoutAlign="space-between">
     <div *ngIf="user; else emptyUser" fxLayout fxLayoutAlign="start center">
-      <p style="margin-right: 1rem;">{{ user.username }}</p>
-      <img [src]="getUserImage()" width="45px" style="border-radius: 8px;">
+      <img [src]="getUserImage()" width="40px" style="border-radius: 8px;">
     </div>
     <ng-template #emptyUser>
       &nbsp;
     </ng-template>
     <div fxLayout fxLayoutAlign="start center" style="text-align: center;">
-      <div class="mat-display-3" style="margin-bottom: 0;">ACC Telemetry Tracker</div>
+      <div class="mat-display-3" style="margin-bottom: 0;">ACC TELEMETRY TRACKER</div>
     </div>
     <div fxLayout fxLayoutAlign="start center" *ngIf="user; else emptyUserTwo">
       <a routerLink="/admin" *ngIf="user.role === 'admin'" routerLinkActive="active-link" [routerLinkActiveOptions]="{exact: true}">Admin</a>
-      <a routerLink="/dashboard" routerLinkActive="active-link" [routerLinkActiveOptions]="{exact: true}">Motec Files</a>
+      <a routerLink="/dashboard" routerLinkActive="active-link" [routerLinkActiveOptions]="{exact: false}">Motec Files</a>
+      <a routerLink="/stats" routerLinkActive="active-link" [routerLinkActiveOptions]="{exact: true}">Stats</a>
       <a (click)="logout()">Logout</a>
     </div>
     <ng-template #emptyUserTwo>
@@ -21,5 +21,7 @@
   </div>
 </nav>
 
+<div style="max-height: 800px; overflow: auto;">
+  <router-outlet></router-outlet>
+</div>
 <app-messaging></app-messaging>
-<router-outlet></router-outlet>

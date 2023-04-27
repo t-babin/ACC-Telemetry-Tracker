@@ -1,102 +1,331 @@
 <div fxLayout="column" class="container">
     <app-loader [component]="'users'" [visible]="loading"></app-loader>
     <div *ngIf="!loading">
-        <div style="width: 20%;" fxLayout fxLayoutAlign="space-between center">
-            <mat-form-field style="width: 70%;">
-                <mat-label>Filter for user</mat-label>
-                <input matInput (keyup)="filter($event)">
-            </mat-form-field>
+        <mat-tab-group dynamicHeight>
+            <mat-tab label="Game Versions">
+                <div fxLayout fxLayoutAlign="space-between center">
+                    <div fxLayout fxLayoutAlign="start center">
+                        <a (click)="addVersion()" *ngIf="versionToEdit === null">Add Version</a>
+                    </div>
+                    <div fxLayout fxLayoutAlign="end center">
+                        <app-paginator [dataLength]="gameVersions.length"
+                            [hidden]="gameVersions === null || gameVersions?.length === 0"
+                            (pageEvent)="versionPage($event)" [pageSizes]="[10, 25, 50]"
+                            [pageSize]="versionPageSize"></app-paginator>
+                    </div>
+                </div>
+                <table mat-table [dataSource]="filteredGameVersions">
 
-            <a *ngIf="hasUpdates()" (click)="submitChanges()" style="margin-top: -1.5rem;">Update</a>
-        </div>
+                    <ng-container matColumnDef="startDate">
+                        <th mat-header-cell *matHeaderCellDef>Start Date</th>
+                        <td mat-cell *matCellDef="let element">
+                            <mat-form-field style="width: 50%;" *ngIf="element.editing; else default">
+                                <input type="date" matInput [(ngModel)]="versionToEdit!.startDate">
+                            </mat-form-field>
+                            <ng-template #default>
+                                {{ element.startDate | date:'YYYY-MM-dd' }}
+                            </ng-template>
+                        </td>
+                    </ng-container>
 
-        <table mat-table [dataSource]="filteredUsers">
-            <ng-container matColumnDef="username">
-                <th mat-header-cell *matHeaderCellDef>Discord Username</th>
-                <td mat-cell *matCellDef="let element"> {{ element.username }} </td>
-            </ng-container>
-            <ng-container matColumnDef="userId">
-                <th mat-header-cell *matHeaderCellDef>Discord Username</th>
-                <td mat-cell *matCellDef="let element"> {{ element.id }} </td>
-            </ng-container>
+                    <ng-container matColumnDef="endDate">
+                        <th mat-header-cell *matHeaderCellDef>End Date</th>
+                        <td mat-cell *matCellDef="let element">
+                            <div fxLayout fxLayoutAlign="start center" *ngIf="element.editing; else default">
+                                <mat-form-field style="width: 50%;">
+                                    <input type="date" matInput [(ngModel)]="versionToEdit!.endDate">
+                                </mat-form-field>
+                                <mat-icon (click)="versionToEdit!.endDate = null">clear</mat-icon>
+                            </div>
+                            <ng-template #default>
+                                {{ element.endDate | date:'YYYY-MM-dd' }}
+                            </ng-template>
+                        </td>
+                    </ng-container>
 
-            <ng-container matColumnDef="servername">
-                <th mat-header-cell *matHeaderCellDef>Server Name</th>
-                <td mat-cell *matCellDef="let element"> {{ element.serverName }} </td>
-            </ng-container>
+                    <ng-container matColumnDef="versionNumber">
+                        <th mat-header-cell *matHeaderCellDef>Version Number</th>
+                        <td mat-cell *matCellDef="let element">
+                            <mat-form-field style="width: 50%;" *ngIf="element.editing; else default">
+                                <input type="text" matInput [(ngModel)]="versionToEdit!.versionNumber">
+                            </mat-form-field>
+                            <ng-template #default>
+                                {{ element.versionNumber }}
+                            </ng-template>
+                        </td>
+                    </ng-container>
 
-            <ng-container matColumnDef="isValid">
-                <th mat-header-cell *matHeaderCellDef>Activated?</th>
-                <td mat-cell *matCellDef="let element">
-                    <mat-checkbox [(ngModel)]="element.isValid" color="primary"></mat-checkbox>
-                </td>
-            </ng-container>
+                    <ng-container matColumnDef="edit">
+                        <th mat-header-cell *matHeaderCellDef></th>
+                        <td mat-cell *matCellDef="let element">
+                            <mat-icon *ngIf="!element.editing; else save" class="clickable"
+                                (click)="edit(element)">edit</mat-icon>
+                            <ng-template #save>
+                                <mat-icon class="clickable faster" style="margin-right: 5px;"
+                                    (click)="saveVersion(element)">check</mat-icon>
+                                <mat-icon class="clickable slower" (click)="cancel(element)">cancel</mat-icon>
+                            </ng-template>
+                        </td>
+                    </ng-container>
 
-            <ng-container matColumnDef="role">
-                <th mat-header-cell *matHeaderCellDef>User Role</th>
-                <td mat-cell *matCellDef="let element">
-                    <mat-select [(ngModel)]="element.role">
-                        <mat-option [value]="'user'">user</mat-option>
-                        <mat-option [value]="'admin'">admin</mat-option>
-                    </mat-select>
-                </td>
-            </ng-container>
+                    <ng-container matColumnDef="delete">
+                        <th mat-header-cell *matHeaderCellDef></th>
+                        <td mat-cell *matCellDef="let element">
+                            <mat-icon class="clickable" (click)="delete(element)">delete</mat-icon>
+                        </td>
+                    </ng-container>
 
-            <ng-container matColumnDef="signupDate">
-                <th mat-header-cell *matHeaderCellDef>Signup Date</th>
-                <td mat-cell *matCellDef="let element"> {{ element.signupDate | date: 'long' }} </td>
-            </ng-container>
+                    <tr mat-header-row *matHeaderRowDef="['startDate', 'endDate', 'versionNumber', 'edit', 'delete']">
+                    </tr>
+                    <tr mat-row
+                        *matRowDef="let row; columns: ['startDate', 'endDate', 'versionNumber', 'edit', 'delete'];">
+                    </tr>
+                </table>
+            </mat-tab>
+            <mat-tab label="User Management">
+                <div style="width: 20%;" fxLayout fxLayoutAlign="space-between center">
+                    <mat-form-field style="width: 70%;">
+                        <mat-label>Filter for user</mat-label>
+                        <input matInput (keyup)="filter($event)">
+                    </mat-form-field>
 
-            <ng-container matColumnDef="fileCount">
-                <th mat-header-cell *matHeaderCellDef>Files Uploaded</th>
-                <td mat-cell *matCellDef="let element"> {{ element.fileUploadCount }} </td>
-            </ng-container>
+                    <a *ngIf="hasUpdates()" (click)="submitChanges()">Update</a>
+                </div>
 
-            <tr mat-header-row
-                *matHeaderRowDef="['username', 'userId', 'servername', 'isValid', 'role', 'signupDate', 'fileCount']">
-            </tr>
-            <tr mat-row
-                *matRowDef="let row; columns: ['username', 'userId', 'servername', 'isValid', 'role', 'signupDate', 'fileCount'];">
-            </tr>
-        </table>
+                <table mat-table [dataSource]="filteredUsers">
+                    <ng-container matColumnDef="username">
+                        <th mat-header-cell *matHeaderCellDef>Discord Username</th>
+                        <td mat-cell *matCellDef="let element"> {{ element.username }} </td>
+                    </ng-container>
+                    <ng-container matColumnDef="userId">
+                        <th mat-header-cell *matHeaderCellDef>Discord Username</th>
+                        <td mat-cell *matCellDef="let element"> {{ element.id }} </td>
+                    </ng-container>
 
-        <div fxLayout style="margin-top: 1rem;">
-            <mat-icon *ngIf="!auditMinimized; else showAudit" class="clickable" style="margin-top: 5px;" (click)="auditMinimized = !auditMinimized">keyboard_arrow_up</mat-icon>
-            <ng-template #showAudit>
-                <mat-icon class="clickable" style="margin-top: 5px;" (click)="auditMinimized = !auditMinimized">keyboard_arrow_down</mat-icon>
-            </ng-template>
-            <h3 (click)="auditMinimized = !auditMinimized" class="clickable" style="margin-bottom: 0;">Audit Log</h3>
-        </div>
-        <div [@shown]="auditMinimized" style="overflow: hidden">
-            <!-- TODO pagination -->
-            <table mat-table [dataSource]="audit">
-                <ng-container matColumnDef="username">
-                    <th mat-header-cell *matHeaderCellDef>Discord Username</th>
-                    <td mat-cell *matCellDef="let element"> {{ element.username }} </td>
-                </ng-container>
+                    <ng-container matColumnDef="servername">
+                        <th mat-header-cell *matHeaderCellDef>Server Name</th>
+                        <td mat-cell *matCellDef="let element"> {{ element.serverName }} </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="isValid">
+                        <th mat-header-cell *matHeaderCellDef>Activated?</th>
+                        <td mat-cell *matCellDef="let element">
+                            <mat-checkbox [(ngModel)]="element.isValid" color="primary"></mat-checkbox>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="role">
+                        <th mat-header-cell *matHeaderCellDef>User Role</th>
+                        <td mat-cell *matCellDef="let element">
+                            <mat-select [(ngModel)]="element.role">
+                                <mat-option [value]="'user'">user</mat-option>
+                                <mat-option [value]="'admin'">admin</mat-option>
+                            </mat-select>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="signupDate">
+                        <th mat-header-cell *matHeaderCellDef>Signup Date</th>
+                        <td mat-cell *matCellDef="let element"> {{ element.signupDate | date: 'long' }} </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="fileCount">
+                        <th mat-header-cell *matHeaderCellDef>Files Uploaded</th>
+                        <td mat-cell *matCellDef="let element"> {{ element.fileUploadCount }} </td>
+                    </ng-container>
+
+                    <tr mat-header-row
+                        *matHeaderRowDef="['username', 'userId', 'servername', 'isValid', 'role', 'signupDate', 'fileCount']">
+                    </tr>
+                    <tr mat-row
+                        *matRowDef="let row; columns: ['username', 'userId', 'servername', 'isValid', 'role', 'signupDate', 'fileCount'];">
+                    </tr>
+                </table>
+            </mat-tab>
+            <mat-tab label="Track Management">
+                <div fxLayout fxLayoutAlign="start center">
+                    <a (click)="addTrack()" *ngIf="versionToEdit === null">Add Track</a>
+                </div>
+                <table mat-table [dataSource]="tracks">
+                    <ng-container matColumnDef="name">
+                        <th mat-header-cell *matHeaderCellDef>Track Name</th>
+                        <td mat-cell *matCellDef="let element">
+                            <mat-form-field style="width: 50%;" *ngIf="element.editing; else defaultTrackName">
+                                <input type="text" matInput [(ngModel)]="trackToEdit!.name">
+                            </mat-form-field>
+                            <ng-template #defaultTrackName>
+                                {{ element.name }}
+                            </ng-template>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="motecName">
+                        <th mat-header-cell *matHeaderCellDef>Track Name in Motec</th>
+                        <td mat-cell *matCellDef="let element">
+                            <mat-form-field style="width: 50%;" *ngIf="element.editing; else defaultTrackmotecName">
+                                <input type="text" matInput [(ngModel)]="trackToEdit!.motecName">
+                            </mat-form-field>
+                            <ng-template #defaultTrackmotecName>
+                                {{ element.motecName }}
+                            </ng-template>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="minLaptime">
+                        <th mat-header-cell *matHeaderCellDef>Minimum Laptime</th>
+                        <td mat-cell *matCellDef="let element">
+                            <mat-form-field style="width: 50%;" *ngIf="element.editing; else defaultminLaptime">
+                                <input type="number" matInput [(ngModel)]="trackToEdit!.minLapTime">
+                            </mat-form-field>
+                            <ng-template #defaultminLaptime>
+                                {{ element.minLapTime }}
+                            </ng-template>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="maxLaptime">
+                        <th mat-header-cell *matHeaderCellDef>Maximum Laptime</th>
+                        <td mat-cell *matCellDef="let element">
+                            <mat-form-field style="width: 50%;" *ngIf="element.editing; else defaultmaxLaptime">
+                                <input type="number" matInput [(ngModel)]="trackToEdit!.maxLapTime">
+                            </mat-form-field>
+                            <ng-template #defaultmaxLaptime>
+                                {{ element.maxLapTime }}
+                            </ng-template>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="edit">
+                        <th mat-header-cell *matHeaderCellDef></th>
+                        <td mat-cell *matCellDef="let element">
+                            <mat-icon *ngIf="!element.editing; else save" class="clickable"
+                                (click)="editTrack(element)">edit</mat-icon>
+                            <ng-template #save>
+                                <mat-icon class="clickable faster" style="margin-right: 5px;"
+                                    (click)="saveTrack(element)">check</mat-icon>
+                                <mat-icon class="clickable slower" (click)="cancelTrack(element)">cancel</mat-icon>
+                            </ng-template>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="delete">
+                        <th mat-header-cell *matHeaderCellDef></th>
+                        <td mat-cell *matCellDef="let element">
+                            <mat-icon class="clickable" (click)="deleteTrack(element)">delete</mat-icon>
+                        </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="['name', 'motecName','minLaptime', 'maxLaptime', 'edit', 'delete']; sticky: true"></tr>
+                    <tr mat-row *matRowDef="let row; columns: ['name', 'motecName','minLaptime', 'maxLaptime', 'edit', 'delete'];">
+                    </tr>
+                </table>
+            </mat-tab>
+            <mat-tab label="Car Management">
+                <div fxLayout fxLayoutAlign="start center">
+                    <a (click)="addCar()" *ngIf="versionToEdit === null">Add Car</a>
+                </div>
+                <table mat-table [dataSource]="cars">
+                    <ng-container matColumnDef="name">
+                        <th mat-header-cell *matHeaderCellDef>Car Name</th>
+                        <td mat-cell *matCellDef="let element">
+                            <mat-form-field style="width: 50%;" *ngIf="element.editing; else defaultCarName">
+                                <input type="text" matInput [(ngModel)]="carToEdit!.name">
+                            </mat-form-field>
+                            <ng-template #defaultCarName>
+                                {{ element.name }}
+                            </ng-template>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="motecName">
+                        <th mat-header-cell *matHeaderCellDef>Car Name in Motec</th>
+                        <td mat-cell *matCellDef="let element">
+                            <mat-form-field style="width: 50%;" *ngIf="element.editing; else defaultCarmotecName">
+                                <input type="text" matInput [(ngModel)]="carToEdit!.motecName">
+                            </mat-form-field>
+                            <ng-template #defaultCarmotecName>
+                                {{ element.motecName }}
+                            </ng-template>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="class">
+                        <th mat-header-cell *matHeaderCellDef>Class</th>
+                        <td mat-cell *matCellDef="let element">
+                            <mat-select *ngIf="element.editing; else defaultclass" [(ngModel)]="carToEdit!.class">
+                                <mat-option value="GT3">GT3</mat-option>
+                                <mat-option value="GT4">GT4</mat-option>
+                                <mat-option value="Cup">Cup</mat-option>
+                                <mat-option value="ST">ST</mat-option>
+                                <mat-option value="CHL">CHL</mat-option>
+                                <mat-option value="TCX">TCX</mat-option>
+                            </mat-select>
+                            <ng-template #defaultclass>
+                                {{ element.class }}
+                            </ng-template>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="edit">
+                        <th mat-header-cell *matHeaderCellDef></th>
+                        <td mat-cell *matCellDef="let element">
+                            <mat-icon *ngIf="!element.editing; else save" class="clickable"
+                                (click)="editCar(element)">edit</mat-icon>
+                            <ng-template #save>
+                                <mat-icon class="clickable faster" style="margin-right: 5px;"
+                                    (click)="saveCar(element)">check</mat-icon>
+                                <mat-icon class="clickable slower" (click)="cancelCar(element)">cancel</mat-icon>
+                            </ng-template>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="delete">
+                        <th mat-header-cell *matHeaderCellDef></th>
+                        <td mat-cell *matCellDef="let element">
+                            <mat-icon class="clickable" (click)="deleteCar(element)">delete</mat-icon>
+                        </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="['name', 'motecName','class','edit', 'delete']; sticky: true"></tr>
+                    <tr mat-row *matRowDef="let row; columns: ['name', 'motecName','class','edit', 'delete'];">
+                    </tr>
+                </table>
+            </mat-tab>
+            <mat-tab label="Audit Log">
+                <div fxLayout fxLayoutAlign="end center">
+                    <app-paginator [dataLength]="auditCount" [hidden]="audit === null || audit?.length === 0"
+                        (pageEvent)="page($event)" [pageSizes]="[20, 50, 100]"
+                        [pageSize]="auditPageSize"></app-paginator>
+                </div>
+                <div style="max-height: 650px; overflow: auto;">
+                    <table mat-table [dataSource]="audit">
+                        <ng-container matColumnDef="username">
+                            <th mat-header-cell *matHeaderCellDef>Discord Username</th>
+                            <td mat-cell *matCellDef="let element"> {{ element.username }} </td>
+                        </ng-container>
     
-                <ng-container matColumnDef="eventType">
-                    <th mat-header-cell *matHeaderCellDef>Event Type</th>
-                    <td mat-cell *matCellDef="let element"> {{ element.eventType }} </td>
-                </ng-container>
+                        <ng-container matColumnDef="eventType">
+                            <th mat-header-cell *matHeaderCellDef>Event Type</th>
+                            <td mat-cell *matCellDef="let element"> {{ element.eventType }} </td>
+                        </ng-container>
     
-                <ng-container matColumnDef="eventDate">
-                    <th mat-header-cell *matHeaderCellDef>Event Date</th>
-                    <td mat-cell *matCellDef="let element"> {{ element.eventDate | date: 'long' }} </td>
-                </ng-container>
+                        <ng-container matColumnDef="eventDate">
+                            <th mat-header-cell *matHeaderCellDef>Event Date</th>
+                            <td mat-cell *matCellDef="let element"> {{ element.eventDate | date: 'long' }} </td>
+                        </ng-container>
     
-                <ng-container matColumnDef="log">
-                    <th mat-header-cell *matHeaderCellDef>Log</th>
-                    <td mat-cell *matCellDef="let element"> {{ element.log }} </td>
-                </ng-container>
+                        <ng-container matColumnDef="log">
+                            <th mat-header-cell *matHeaderCellDef>Log</th>
+                            <td mat-cell *matCellDef="let element"> {{ element.log }} </td>
+                        </ng-container>
     
-                <tr mat-header-row
-                    *matHeaderRowDef="['username', 'eventDate', 'eventType', 'log']">
-                </tr>
-                <tr mat-row
-                    *matRowDef="let row; columns: ['username', 'eventDate', 'eventType', 'log'];">
-                </tr>
-            </table>
-        </div>
+                        <tr mat-header-row *matHeaderRowDef="['username', 'eventDate', 'eventType', 'log']; sticky: true">
+                        </tr>
+                        <tr mat-row *matRowDef="let row; columns: ['username', 'eventDate', 'eventType', 'log'];">
+                        </tr>
+                    </table>
+                </div>
+            </mat-tab>
+        </mat-tab-group>
     </div>
 </div>

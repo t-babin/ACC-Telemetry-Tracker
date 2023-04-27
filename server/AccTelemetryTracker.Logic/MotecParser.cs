@@ -3,100 +3,22 @@ using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Schema;
+using AccTelemetryTracker.Datastore;
+using AccTelemetryTracker.Datastore.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace AccTelemetryTracker.Logic;
 public class MotecParser : IMotecParser
 {
     private readonly ILogger<MotecParser> _logger;
-    public MotecParser(ILogger<MotecParser> logger)
+    private readonly IServiceScopeFactory _serviceProvider;
+    public MotecParser(ILogger<MotecParser> logger, IServiceScopeFactory serviceProvider)
     {
         _logger = logger;
+        _serviceProvider = serviceProvider;
     }
-
-    private readonly Dictionary<string, string> _validCars = new Dictionary<string, string>()
-    {
-        // GT3
-        { "V12 Vantage GT3", "GT3"},
-        { "V8 Vantage GT3", "GT3"},
-        { "R8 LMS", "GT3" },
-        { "R8 LMS EVO", "GT3" },
-        { "R8 LMS EVO II", "GT3" },
-        { "Continental 16", "GT3"},
-        { "Continental 18", "GT3"},
-        { "M4 GT3", "GT3"},
-        { "M6 GT3", "GT3"},
-        { "Emil Frey G3", "GT3"},
-        { "488 GT3", "GT3"},
-        { "488 GT3 Evo", "GT3"},
-        { "NSX GT3", "GT3"},
-        { "NSX GT3 EVO", "GT3"},
-        { "Huracan GT3", "GT3"},
-        { "Huracan GT3 EVO", "GT3"},
-        { "RC F GT3", "GT3"},
-        { "McLaren 650S GT3", "GT3"},
-        { "McLaren 720S GT3", "GT3"},
-        { "AMG GT3", "GT3"},
-        { "AMG GT3 Evo", "GT3"},
-        { "GTR GT3 17", "GT3"},
-        { "GTR GT3 18", "GT3"},
-        { "991 GT3 R 2016", "GT3" },
-        { "991ii GT3 R EVO", "GT3" },
-        { "Gallardo REX", "GT3" },
-
-        // GT4
-        { "A110 GT4", "GT4" },
-        { "V8 Vantage GT4", "GT4" },
-        { "R8 GT4", "GT4" },
-        { "M4 GT4", "GT4" },
-        { "Camaro GT4R", "GT4" },
-        { "G55 GT4", "GT4" },
-        { "XBOW GT4", "GT4" },
-        { "GranTurismo MC GT4", "GT4" },
-        { "570S GT4", "GT4" },
-        { "AMG GT4", "GT4" },
-        { "718 Cayman GT4 MR", "GT4" },
-
-        // CUP
-        { "991II GT3 Cup", "Cup" },
-        { "992 GT3 Cup", "Cup" },
-
-        // Super Trofeo
-        { "Huracan ST", "ST" },
-        { "Huracan ST Evo2", "ST" },
-
-        // Challenge
-        { "488 Challenge Evo", "CHL" },
-
-        // TCX
-        { "M2 CS Racing", "TCX" },
-    };
-
-    private readonly Dictionary<string, string> _validTracks = new Dictionary<string, string>()
-    {
-        { "barcelona", "Barcelona" },
-        { "brands_hatch", "Brands Hatch" },
-        { "cota", "Circuit of the Americas" },
-        { "donington", "Donington" },
-        { "hungaroring", "Hungaroring" },
-        { "imola", "Imola" },
-        { "indianapolis", "Indianapolis" },
-        { "kyalami", "Kyalami" },
-        { "laguna_seca", "Laguna Seca" },
-        { "misano", "Misano" },
-        { "monza", "Monza" },
-        { "mount_panorama", "Mount Panorama" },
-        { "nurburgring", "Nurburgring" },
-        { "paul_ricard", "Paul Ricard" },
-        { "snetterton", "Snetterton" },
-        { "spa", "Spa-Francorchamps" },
-        { "silverstone", "Silverstone" },
-        { "oulton_park", "Oulton Park" },
-        { "suzuka", "Suzuka" },
-        { "watkins_glen", "Watkins Glen" },
-        { "zandvoort", "Zandvoort" },
-        { "zolder", "Zolder" }
-    };
 
     /// <inheritdoc />
     public bool IsValidLdx(string? path)
@@ -129,8 +51,6 @@ public class MotecParser : IMotecParser
     /// <inheritdoc />
     public IEnumerable<MotecLap> ParseLaps(string? path)
     {
-        ValidatePath(path, ".ldx");
-
         using (var reader = File.OpenText(path!))
         {
             var root = XDocument.Load(reader, LoadOptions.None).Root;
@@ -163,14 +83,102 @@ public class MotecParser : IMotecParser
 
             return laps;
         }
+    }
 
+    public IEnumerable<MotecLap> ParseLaps(IEnumerable<string> files)
+    {
+        ValidateFiles(files, out var ldxPath, out var ldPath);
+        return ParseLaps(ldxPath);
     }
 
     /// <inheritdoc />
-    public async Task<MotecFile> ParseMotecFileAsync(string? path)
+    public async Task<Datastore.Models.MotecFile> ParseMotecFileAsync(IEnumerable<string> files, string fileName, long userId)
     {
-        ValidatePath(path, ".ld");
+        ValidateFiles(files, out var ldxPath, out var ldPath);
+        var resultFromFile = await ParseMotecContent(ldPath);
 
+        using var scope = _serviceProvider.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AccTelemetryTrackerContext>();
+        var validCars = await dbContext.Cars.AsNoTracking().ToListAsync();
+        var validTracks = await dbContext.Tracks.AsNoTracking().ToListAsync();
+        var gameVersions = await dbContext.GameVersions
+            .AsNoTracking()
+            .Select(g => new GameVersion { StartDate = g.StartDate, VersionNumber = g.VersionNumber, EndDate = g.EndDate.HasValue ? g.EndDate : DateTime.MaxValue })
+            .ToListAsync();
+
+        if (!validTracks.Any(t => t.MotecName.Equals(resultFromFile.Track)) && !validTracks.Any(t => t.Name.Equals(resultFromFile.Track)))
+        {
+            _logger.LogError($"The track [{resultFromFile.Track}] is not valid");
+            throw new MotecParseException($"The track [{resultFromFile.Track}] is not valid");
+        }
+        var track = validTracks.First(t => t.MotecName.Equals(resultFromFile.Track) || t.Name.Equals(resultFromFile.Track));
+
+        if (!validCars.Any(c => c.MotecName.Equals(resultFromFile.Car)))
+        {
+            _logger.LogError($"The Car [{resultFromFile.Car}] is not valid");
+            throw new MotecParseException($"The Car [{resultFromFile.Car}] is not valid");
+        }
+        var car = validCars.First(c => c.MotecName.Equals(resultFromFile.Car));
+
+        var laps = ParseLaps(ldxPath).Where(l => l.LapTime > track.MinLapTime && l.LapTime <= track.MaxLapTime);
+
+        var existingMotec = await dbContext.MotecFiles
+            .Include(m => m.Car)
+            .Include(m => m.Track)
+            .FirstOrDefaultAsync(m => m.SessionDate.Equals(resultFromFile.Date) && m.Car.MotecName.Equals(resultFromFile.Car) && m.Track.MotecName.Equals(resultFromFile.Track));
+
+        if (existingMotec != null)
+        {
+            throw new MotecFileExistsException($"The motec file on the track {resultFromFile.Track} with the car {resultFromFile.Car} on the date {resultFromFile.Date.ToShortDateString()} already exists");
+        }
+
+        var motecFile = new Datastore.Models.MotecFile
+        {
+            TrackId = track.Id,
+            CarId = car.Id,
+            DateInserted = DateTime.Now,
+            NumberOfLaps = laps.Count(),
+            FileLocation = $"{fileName}.zip",
+            FastestLap = laps.Min(l => l.LapTime),
+            SessionDate = resultFromFile.Date,
+            UserId = userId,
+            GameVersion = gameVersions.FirstOrDefault(g => resultFromFile.Date.Date >= g.StartDate && resultFromFile.Date.Date <= g.EndDate)!.VersionNumber
+        };
+        dbContext.MotecFiles.Add(motecFile);
+
+        await dbContext.SaveChangesAsync();
+
+        return await dbContext.MotecFiles.AsNoTracking().Include(m => m.Car).Include(m => m.Track).Include(m => m.User).FirstAsync(m => m.Id == motecFile.Id);
+    }
+
+    private void ValidateFiles(IEnumerable<string> files, out string ldxPath, out string ldPath)
+    {
+        if (files.Count() != 2)
+        {
+            _logger.LogError("More than two files were provided");
+            throw new IOException("More than two files were provided");
+        }
+        ldxPath = ValidateExtension(files, ".ldx");
+        ldPath = ValidateExtension(files, ".ld");
+        if (!IsValidLdx(ldxPath))
+        {
+            _logger.LogError($"The file [{ldxPath}] is not a valid ldx file.");
+            throw new MotecParseException($"The file [{ldxPath}] is not a valid ldx file.");
+        }
+
+        ValidatePath(ldPath, ".ld");
+        ValidatePath(ldxPath, ".ldx");
+    }
+
+    /// <summary>
+    /// Parses the .ld Motec file for the session date, car, and track
+    /// </summary>
+    /// <returns></returns>
+    private async Task<(DateTime Date, string Car, string Track)> ParseMotecContent(string? path)
+    {
+        var car = string.Empty;
+        var track = string.Empty;
+        var date = DateTime.MinValue;
         // "@H,4>?\u001f\u0001@B\u000fD\u001fADL?\u0001??%07/12/202117:59:12Kyalami??\fcR8 LMS EVOP
         // "@H,4>?\u001f\u0001@B\u000fD\u001fADL?\u0001??%02/12/202121:13:58Imola??\fc991ii GT3 R EVOU
         using (var stream = new FileStream(path!, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 4096, useAsync: true))
@@ -182,7 +190,7 @@ public class MotecParser : IMotecParser
                 _logger.LogInformation($"Read [{numRead}] bytes from the file");
                 var text = Encoding.ASCII.GetString(buffer, 0, numRead).Replace("\0", "");
                 var parts = text.Split("??").Skip(1).ToArray();
-                if (DateTime.TryParseExact(parts[0][1..19], "dd/MM/yyyyHH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+                if (DateTime.TryParseExact(parts[0][1..19], "dd/MM/yyyyHH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out date))
                 {
                     if (date.Equals(default(DateTime)))
                     {
@@ -195,19 +203,8 @@ public class MotecParser : IMotecParser
                     _logger.LogError("Unable to properly parse the file's datetime");
                     throw new MotecParseException("Unable to properly parse the file's datetime");
                 }
-                var track = parts[0][19..];
-                if (!_validTracks.Any(t => t.Key.Equals(track.ToLower())))
-                {
-                    _logger.LogError($"The track [{track}] is not valid");
-                    throw new MotecParseException($"The track [{track}] is not valid");
-                }
-                var car = parts[1].Replace("\fc", "")[0..^2];
-                if (!_validCars.Keys.Any(c => c.Equals(car)))
-                {
-                    _logger.LogError($"The car [{car}] is not valid");
-                    throw new MotecParseException($"The car [{car}] is not valid");
-                }
-                return new MotecFile { Car = car, CarClass = _validCars[car], Track = _validTracks[track.ToLower()], Date = date };
+                track = parts[0][19..];
+                car = parts[1].Replace("\fc", "")[0..^2];
             }
             else
             {
@@ -215,6 +212,7 @@ public class MotecParser : IMotecParser
                 throw new MotecParseException($"Unable to read the first 1000 file bytes of [{path}]");
             }
         }
+        return (date, car, track);
     }
 
     /// <summary>
@@ -249,5 +247,16 @@ public class MotecParser : IMotecParser
             // isValid = false;
             _logger.LogError($"invalid schema [{e.Message}]");
         }
+    }
+
+    private string ValidateExtension(IEnumerable<string> files, string extension)
+    {
+        if (!files.Any(f => Path.GetExtension(f)?.Equals(extension) ?? false))
+        {
+            _logger.LogError($"No file with the extension [{extension}] was provided");
+            throw new FileNotFoundException($"No file with the extension [{extension}] was provided");
+        }
+
+        return files.FirstOrDefault(f => Path.GetExtension(f).Equals(extension))!;
     }
 }

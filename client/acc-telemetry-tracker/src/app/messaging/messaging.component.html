@@ -1,4 +1,4 @@
-<div class="container" *ngIf="messagingService.messages.length > 0" fxLayout="column" fxLayoutAlign="space-around center">
+<div style="margin: 1rem 1rem 0rem 1rem" *ngIf="messagingService.messages.length > 0" fxLayout="column" fxLayoutAlign="space-around center">
     <div *ngFor="let e of messagingService.messages" [ngClass]="e.type === 'error' ? 'error' : 'success'"
         class="alert"
         fxLayout="column" fxLayoutAlign="space-around center">

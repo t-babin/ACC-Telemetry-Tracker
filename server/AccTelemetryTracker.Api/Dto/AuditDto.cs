@@ -2,6 +2,13 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace AccTelemetryTracker.Api.Dto
 {
+    public class AuditLogDto
+    {
+        public int AuditCount { get; set; }
+
+        public IEnumerable<AuditDto>? AuditEvents { get; set; }
+    }
+
     public class AuditDto
     {
         public DateTime EventDate { get; set; }

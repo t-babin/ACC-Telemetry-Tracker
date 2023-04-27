@@ -1,3 +1,9 @@
+# 1.6.0
+- UI redesign
+- Stats moved to new page
+- Game versions, cars, and tracks now stored in database and can be updated on the admin page
+- Discord notifications now include link to directly open newly added file
+
 # 1.5.2
 - Added dates for new ACC game version 1.8.21
 

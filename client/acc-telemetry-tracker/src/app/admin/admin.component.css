@@ -1,9 +1,3 @@
-.mat-cell,
-.mat-header-cell {
-    padding: 0px 5px;
-    text-align: center;
-}
-
 table {
 	background-color: #F6F7EC;
 	border-collapse: collapse;
@@ -11,10 +5,7 @@ table {
 
 .mat-cell,
 .mat-header-cell {
-    padding: 0px 5px;
-    text-align: center;
 	color: inherit;
-	border: none;
 }
 
 .mat-cell {
@@ -23,4 +14,17 @@ table {
 
 .mat-header-cell {
 	font-size: 15px;
+}
+
+.mat-column-log {
+	word-wrap: break-word !important;
+	white-space: unset !important;
+	width: 45% !important;
+	overflow-wrap: break-word;
+	word-break: break-word;
+
+	-ms-hyphens: auto;
+	-moz-hyphens: auto;
+	-webkit-hyphens: auto;
+	hyphens: auto;
 }

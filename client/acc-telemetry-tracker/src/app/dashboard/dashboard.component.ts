@@ -1,5 +1,5 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
-import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { Car } from '../_models/car';
@@ -9,11 +9,11 @@ import { User } from '../_models/user';
 import { ApiService } from '../_services/api.service';
 import { AuthenticationService } from '../_services/authentication.service';
 import { saveAs } from 'file-saver';
-
-import * as moment from 'moment';
 import { MessagingService } from '../messaging.service';
 import { TimePipe } from '../time.pipe';
-import { ReportsComponent } from '../reports/reports.component';
+import { ActivatedRoute } from '@angular/router';
+
+import * as moment from 'moment';
 
 @Component({
   selector: 'app-dashboard',
@@ -51,7 +51,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   deleteId = 0;
   processingUpload = false;
   referenceLines: any[] = [];
-  tableHeaders = ['car', 'carClass', 'track', 'user', 'numLaps', 'fastestLap', 'trackCondition', 'dateLoaded', 'version', 'comment', 'showLaps', 'download'];
+  tableHeaders = ['showLaps', 'car', 'carClass', 'track', 'user', 'numLaps', 'fastestLap', 'trackCondition', 'dateLoaded', 'version', 'comment', 'copy', 'download', 'delete'];
   uploadFileName = '';
   uploadTrackConditions = '';
   uploadComment = '';
@@ -59,9 +59,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   sortDirection: 'asc' | 'desc' = 'asc';
   sortedOn = '';
   sortOnString = '';
-
-  @ViewChild(ReportsComponent)
-  reports!: ReportsComponent;
+  additionalFileId: number | null = null;
 
   colourScheme = {
     domain: ['#DA4D1A', '#EE8F6D', '#3F599F', '#6D85C5', '#10152C', '#314087', '#7CB4B8', '#E8DB7D']
@@ -70,27 +68,26 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   yAxisTickFormatting = (value: any) => this.timePipe.transform(value);
 
   constructor(public authService: AuthenticationService, private apiService: ApiService, private messagingService: MessagingService,
-    private timePipe: TimePipe) { }
+    private timePipe: TimePipe, private route: ActivatedRoute) { }
 
   ngOnInit(): void {
     if (!this.authService.isAuthorized) {
       this.authService.authorizedCallback();
     }
-
-    if (this.authService.userValue?.role === 'admin') {
-      this.tableHeaders.push('delete');
+    if (this.route.snapshot.paramMap.has('id')) {
+      this.additionalFileId = this.route.snapshot.paramMap.get('id') ? parseInt(this.route.snapshot.paramMap.get('id') as string) : null;
     }
   }
 
   ngAfterViewInit(): void {
-    this.reload();
+    this.reload(this.additionalFileId);
   }
 
-  reload(): void {
+  reload(additionalFile?: number | null): void {
     this.loadingFiles = true;
     forkJoin({
       files: this.apiService.getMotecFiles(this.selectedCars.value, this.selectedTracks.value,
-        this.selectedUsers.value, this.pageSize, this.currentPage, this.sortOnString),
+        this.selectedUsers.value, this.pageSize, this.currentPage, this.sortOnString, additionalFile),
       cars: this.apiService.getCars(),
       tracks: this.apiService.getTracks(),
       users: this.apiService.getUsers(),
@@ -104,11 +101,13 @@ export class DashboardComponent implements OnInit, AfterViewInit {
           m.changedTrackConditions = m.trackConditions;
           m.editingConditions = false;
         });
+        if (additionalFile && this.motecFiles.find(m => m.id === additionalFile)) {
+          this.showLaps(this.motecFiles.find(m => m.id === additionalFile)!);
+        }
         this.cars = value.cars;
         this.tracks = value.tracks;
         this.users = value.users;
         this.fileCount = value.count;
-        this.reports.getChartData();
         this.loadingFiles = false;
       },
       error: (e) => console.log(e)
@@ -183,12 +182,12 @@ export class DashboardComponent implements OnInit, AfterViewInit {
             conditions: this.apiService.updateFileConditions(updatedFile)
           }).subscribe({
             next: (v) => {
-              this.processingUpload = false;
               forkJoin({
                 avg: this.apiService.updateCarAverageTime(),
                 notify: this.apiService.notify(updatedFile.id)
               }).subscribe({
                 next: (v) => {
+                  this.processingUpload = false;
                   this.reload();
                   this.uploadComment = '';
                   this.uploadTrackConditions = '';
@@ -221,6 +220,9 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   }
 
   deleteFile(file: MotecFile): void {
+    if (file.username !== this.authService.userValue?.username && this.authService.userValue?.role !== 'admin') {
+      return;
+    }
     this.deleteId = file.id;
     this.apiService.deleteFile(file.id)
       .subscribe({
@@ -313,5 +315,10 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     }
 
     this.reload();
+  }
+
+  copyLink(element: MotecFile): void {
+    navigator.clipboard.writeText(`${window.location}/${element.id}`)
+      .then(() => this.messagingService.pushMessage({ message: 'Copied link to clipboard', type: 'success' }), () => console.log('Failed to copy to clipboard'));
   }
 }

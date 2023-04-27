@@ -1,9 +1,13 @@
 namespace AccTelemetryTracker.Logic;
 public class MotecFile
 {
-    public string Track { get; set; } = string.Empty;
+    public string TrackName { get; set; } = string.Empty;
+    
+    public string MotecTrack { get; set; } = string.Empty;
 
-    public string Car { get; set; } = string.Empty;
+    public string MotecCarName { get; set; } = string.Empty;
+
+    public string CarName { get; set; } = string.Empty;
 
     public string CarClass { get; set; } = string.Empty;
     

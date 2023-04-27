@@ -1,5 +1,7 @@
 export interface Car {
-    id: number;
+    id: number | null;
     name: string;
-    carClass: string;
+    class: string;
+    motecName: string;
+    editing: boolean;
 }

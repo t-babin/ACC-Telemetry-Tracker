@@ -1,188 +1,175 @@
-<div fxLayout style="margin-top: 1rem;">
-    <mat-icon *ngIf="!metricsMinimized; else showMetrics" class="clickable" style="margin-top: 5px;" (click)="changeMetricsVisibility()">keyboard_arrow_up</mat-icon>
-    <ng-template #showMetrics>
-        <mat-icon class="clickable" style="margin-top: 5px;" (click)="changeMetricsVisibility()">keyboard_arrow_down</mat-icon>
-    </ng-template>
-    <h3 (click)="changeMetricsVisibility()" class="clickable" style="margin-bottom: 0;">Metrics</h3>
-</div>
-<div [@shown]="metricsMinimized" style="overflow: hidden">
-    <div class="container-sm" style="text-align: center;">
-        <div fxLayout fxLayoutAlign=" start">
-            <app-loader component="metrics" [visible]="loadingStats"></app-loader>
-            <div style="width: 100%;" *ngIf="counts.length > 0 && !loadingStats">
-                <mat-tab-group dynamicHeight (selectedTabChange)="tabChanged($event)">
-                    <mat-tab label="Upload Statistics">
-                        <mat-tab-group dynamicHeight>
-                            <mat-tab label="By Track">
-                                <div class="chart-container">
-                                    <app-loader component="chart" [visible]="loadingBreakdownChart"></app-loader>
-                                    <div style="text-align: left; margin: 10px 15px 0px;" *ngIf="!loadingBreakdownChart">
-                                        <mat-checkbox [(ngModel)]="includeCars">Include cars</mat-checkbox>
-                                    </div>
-                                    <ngx-charts-bar-horizontal-stacked *ngIf="!loadingBreakdownChart && includeCars"
-                                        [results]="trackCarMetricsStacked"
-                                        [scheme]="colourScheme"
-                                        [yAxis]="true"
-                                        [xAxis]="true"
-                                        [xAxisLabel]="'Number of Files Uploaded'"
-                                        [showXAxisLabel]="true"
-                                        [barPadding]="5"
-                                        [legend]="true">
-                                    </ngx-charts-bar-horizontal-stacked>
-                                    <ngx-charts-bar-horizontal *ngIf="!loadingBreakdownChart && !includeCars"
-                                        [results]="trackMetrics"
-                                        [scheme]="colourScheme"
-                                        [yAxis]="true"
-                                        [xAxis]="true"
-                                        [xAxisLabel]="'Number of Files Uploaded'"
-                                        [showXAxisLabel]="true"
-                                        [barPadding]="5"
-                                        [legend]="true">
-                                    </ngx-charts-bar-horizontal>
+<div class="container-sm">
+    <app-loader component="metrics" [visible]="loadingStats"></app-loader>
+    <div fxLayout fxLayoutAlign=" start">
+        <div style="width: 100%;" *ngIf="counts.length > 0 && !loadingStats">
+            <mat-tab-group dynamicHeight (selectedTabChange)="tabChanged($event)">
+                <mat-tab label="Upload Statistics">
+                    <mat-tab-group dynamicHeight>
+                        <mat-tab label="By Track">
+                            <div class="chart-container">
+                                <app-loader component="chart" [visible]="loadingBreakdownChart"></app-loader>
+                                <div style="text-align: left; margin: 10px 15px 0px;" *ngIf="!loadingBreakdownChart">
+                                    <mat-checkbox [(ngModel)]="includeCars">Include cars</mat-checkbox>
                                 </div>
-                            </mat-tab>
-                            <mat-tab label="By Car">
-                                <div class="chart-container">
-                                    <app-loader component="chart" [visible]="loadingBreakdownChart"></app-loader>
-                                    <div style="text-align: left; margin: 10px 15px 0px;" *ngIf="!loadingBreakdownChart">
-                                        <mat-checkbox [(ngModel)]="includeTracks">Include tracks</mat-checkbox>
-                                    </div>
-                                    <ngx-charts-bar-horizontal-stacked *ngIf="!loadingBreakdownChart && includeTracks"
-                                        [results]="carTrackMetricsStacked"
-                                        [scheme]="colourScheme"
-                                        [yAxis]="true"
-                                        [xAxis]="true"
-                                        [xAxisLabel]="'Number of Files Uploaded'"
-                                        [showXAxisLabel]="true"
-                                        [barPadding]="5"
-                                        [legend]="true">
-                                    </ngx-charts-bar-horizontal-stacked>
-                                    <ngx-charts-bar-horizontal *ngIf="!loadingBreakdownChart && !includeTracks"
-                                        [results]="carMetrics"
-                                        [scheme]="colourScheme"
-                                        [yAxis]="true"
-                                        [xAxis]="true"
-                                        [xAxisLabel]="'Number of Files Uploaded'"
-                                        [showXAxisLabel]="true"
-                                        [barPadding]="5"
-                                        [legend]="true">
-                                    </ngx-charts-bar-horizontal>
+                                <ngx-charts-bar-horizontal-stacked *ngIf="!loadingBreakdownChart && includeCars"
+                                    [results]="trackCarMetricsStacked" [scheme]="colourScheme" [yAxis]="true"
+                                    [xAxis]="true" [xAxisLabel]="'Number of Files Uploaded'" [showXAxisLabel]="true"
+                                    [barPadding]="5" [legend]="true">
+                                </ngx-charts-bar-horizontal-stacked>
+                                <ngx-charts-bar-horizontal *ngIf="!loadingBreakdownChart && !includeCars"
+                                    [results]="trackMetrics" [scheme]="colourScheme" [yAxis]="true" [xAxis]="true"
+                                    [xAxisLabel]="'Number of Files Uploaded'" [showXAxisLabel]="true" [barPadding]="5"
+                                    [legend]="true">
+                                </ngx-charts-bar-horizontal>
+                            </div>
+                        </mat-tab>
+                        <mat-tab label="By Car">
+                            <div class="chart-container">
+                                <app-loader component="chart" [visible]="loadingBreakdownChart"></app-loader>
+                                <div style="text-align: left; margin: 10px 15px 0px;" *ngIf="!loadingBreakdownChart">
+                                    <mat-checkbox [(ngModel)]="includeTracks">Include tracks</mat-checkbox>
                                 </div>
-                            </mat-tab>
-                            <mat-tab label="By User">
-                                <div class="chart-container">
-                                    <app-loader component="chart" [visible]="loadingBreakdownChart"></app-loader>
-                                    <div fxLayout fxLayoutAlign="start center" style="text-align: left; margin: 10px 15px 0px;" *ngIf="!loadingBreakdownChart">
-                                        <mat-checkbox style="margin-right: 3%;" [(ngModel)]="includeUserCars" (change)="userChartSelectionChanged('cars', $event.checked)">Include cars</mat-checkbox>
-                                        <mat-checkbox [(ngModel)]="includeUserTracks" (change)="userChartSelectionChanged('tracks', $event.checked)">Include tracks</mat-checkbox>
-                                    </div>
-                                    <ngx-charts-bar-horizontal *ngIf="!loadingBreakdownChart && !includeUserCars && !includeUserTracks"
-                                        [results]="userMetrics"
-                                        [scheme]="colourScheme"
-                                        [yAxis]="true"
-                                        [xAxis]="true"
-                                        [xAxisLabel]="'Number of Files Uploaded'"
-                                        [showXAxisLabel]="true"
-                                        [barPadding]="5"
-                                        [legend]="true">
-                                    </ngx-charts-bar-horizontal>
-                                    <ngx-charts-bar-horizontal-stacked *ngIf="!loadingBreakdownChart && includeUserTracks"
-                                        [results]="userTrackMetricsStacked"
-                                        [scheme]="colourScheme"
-                                        [yAxis]="true"
-                                        [xAxis]="true"
-                                        [xAxisLabel]="'Number of Files Uploaded'"
-                                        [showXAxisLabel]="true"
-                                        [barPadding]="5"
-                                        [legend]="true">
-                                    </ngx-charts-bar-horizontal-stacked>
-                                    <ngx-charts-bar-horizontal-stacked *ngIf="!loadingBreakdownChart && includeUserCars"
-                                        [results]="userCarMetricsStacked"
-                                        [scheme]="colourScheme"
-                                        [yAxis]="true"
-                                        [xAxis]="true"
-                                        [xAxisLabel]="'Number of Files Uploaded'"
-                                        [showXAxisLabel]="true"
-                                        [barPadding]="5"
-                                        [legend]="true">
-                                    </ngx-charts-bar-horizontal-stacked>
+                                <ngx-charts-bar-horizontal-stacked *ngIf="!loadingBreakdownChart && includeTracks"
+                                    [results]="carTrackMetricsStacked" [scheme]="colourScheme" [yAxis]="true"
+                                    [xAxis]="true" [xAxisLabel]="'Number of Files Uploaded'" [showXAxisLabel]="true"
+                                    [barPadding]="5" [legend]="true">
+                                </ngx-charts-bar-horizontal-stacked>
+                                <ngx-charts-bar-horizontal *ngIf="!loadingBreakdownChart && !includeTracks"
+                                    [results]="carMetrics" [scheme]="colourScheme" [yAxis]="true" [xAxis]="true"
+                                    [xAxisLabel]="'Number of Files Uploaded'" [showXAxisLabel]="true" [barPadding]="5"
+                                    [legend]="true">
+                                </ngx-charts-bar-horizontal>
+                            </div>
+                        </mat-tab>
+                        <mat-tab label="By User">
+                            <div class="chart-container">
+                                <app-loader component="chart" [visible]="loadingBreakdownChart"></app-loader>
+                                <div fxLayout fxLayoutAlign="start center"
+                                    style="text-align: left; margin: 10px 15px 0px;" *ngIf="!loadingBreakdownChart">
+                                    <mat-checkbox style="margin-right: 3%;" [(ngModel)]="includeUserCars"
+                                        (change)="userChartSelectionChanged('cars', $event.checked)">Include
+                                        cars</mat-checkbox>
+                                    <mat-checkbox [(ngModel)]="includeUserTracks"
+                                        (change)="userChartSelectionChanged('tracks', $event.checked)">Include
+                                        tracks</mat-checkbox>
                                 </div>
-                            </mat-tab>
-                        </mat-tab-group>
-                    </mat-tab>
-                    <mat-tab label="Laptime Statistics">
-                        <mat-tab-group dynamicHeight (selectedTabChange)="tabChanged($event)">
-                            <mat-tab label="Overall">
-                                <div style="text-align: left;" *ngIf="!loadingTrackChart">
-                                    <mat-form-field>
-                                        <mat-select [(ngModel)]="selectedTrack" (selectionChange)="selectedTrackChanged()">
-                                            <mat-option *ngFor="let t of getTracks(true)" [value]="t">{{ t }}</mat-option>
-                                        </mat-select>
-                                    </mat-form-field>
-                                </div>
-                                <div class="chart-container">
-                                    <app-loader component="chart" [visible]="loadingTrackChart"></app-loader>
-                                    <ngx-charts-line-chart *ngIf="!loadingTrackChart"
-                                        [xAxisLabel]="'Lap'"
-                                        [results]="averageLapData"
-                                        [xAxis]="true"
-                                        [yAxis]="true"
-                                        [showGridLines]="true"
-                                        [scheme]="colourScheme"
-                                        [yAxisTickFormatting]="yAxisTickFormatting"
-                                        [legend]="true"
-                                        [autoScale]="true">
-                                        <ng-template #tooltipTemplate let-model="model">
-                                            <h2 style="color: white; margin-bottom: 0;">{{ model.name }}</h2>
-                                            <h3>{{ model.series }} - {{ model.value | time }}</h3>
-                                        </ng-template>
-                                        <ng-template #seriesTooltipTemplate let-model="model">
-                                            <h2 style="color: white; margin-bottom: 0;">{{ model[0].name }}</h2>
-                                            <div *ngFor="let m of model">
-                                                <h3 style="margin-bottom: 0;">{{ m.series }}: {{ m.value | time }}</h3>
-                                            </div>
-                                        </ng-template>
-                                    </ngx-charts-line-chart>
-                                </div>
-                            </mat-tab>
-                            <mat-tab label="Driver Fastest Laps">
-                                <div style="text-align: left;" *ngIf="!loadingTrackChart">
-                                    <mat-form-field>
-                                        <mat-select multiple [(ngModel)]="selectedUser" (selectionChange)="selectedUserChanged()">
-                                            <mat-option *ngFor="let t of getUsers()" [value]="t">{{ t }}</mat-option>
-                                        </mat-select>
-                                    </mat-form-field>
-                                </div>
-                                <div class="chart-container">
-                                    <app-loader component="chart" [visible]="loadingTrackChart"></app-loader>
-                                    <ngx-charts-line-chart *ngIf="!loadingTrackChart"
-                                        [xAxisLabel]="'Lap'"
-                                        [results]="userLapData"
-                                        [xAxis]="true"
-                                        [yAxis]="true"
-                                        [showGridLines]="true"
-                                        [scheme]="colourScheme"
-                                        [yAxisTickFormatting]="yAxisTickFormatting"
-                                        [legend]="true"
-                                        [autoScale]="true">
-                                        <ng-template #tooltipTemplate let-model="model">
-                                            <h2 style="color: white; margin-bottom: 0;">{{ model.name }}</h2>
-                                            <h3>{{ model.series }} - {{ model.value | time }}</h3>
-                                        </ng-template>
-                                        <ng-template #seriesTooltipTemplate let-model="model">
-                                            <h2 style="color: white; margin-bottom: 0;">{{ model[0].name }}</h2>
-                                            <div *ngFor="let m of model">
-                                                <h3 style="margin-bottom: 0;">{{ m.series }}: {{ m.value | time }}</h3>
-                                            </div>
-                                        </ng-template>
-                                    </ngx-charts-line-chart>
-                                </div>
-                            </mat-tab>
-                        </mat-tab-group>
-                    </mat-tab>
-                </mat-tab-group>
-                <div id="scroll">&nbsp;</div>
-            </div>
+                                <ngx-charts-bar-horizontal
+                                    *ngIf="!loadingBreakdownChart && !includeUserCars && !includeUserTracks"
+                                    [results]="userMetrics" [scheme]="colourScheme" [yAxis]="true" [xAxis]="true"
+                                    [xAxisLabel]="'Number of Files Uploaded'" [showXAxisLabel]="true" [barPadding]="5"
+                                    [legend]="true">
+                                </ngx-charts-bar-horizontal>
+                                <ngx-charts-bar-horizontal-stacked *ngIf="!loadingBreakdownChart && includeUserTracks"
+                                    [results]="userTrackMetricsStacked" [scheme]="colourScheme" [yAxis]="true"
+                                    [xAxis]="true" [xAxisLabel]="'Number of Files Uploaded'" [showXAxisLabel]="true"
+                                    [barPadding]="5" [legend]="true">
+                                </ngx-charts-bar-horizontal-stacked>
+                                <ngx-charts-bar-horizontal-stacked *ngIf="!loadingBreakdownChart && includeUserCars"
+                                    [results]="userCarMetricsStacked" [scheme]="colourScheme" [yAxis]="true"
+                                    [xAxis]="true" [xAxisLabel]="'Number of Files Uploaded'" [showXAxisLabel]="true"
+                                    [barPadding]="5" [legend]="true">
+                                </ngx-charts-bar-horizontal-stacked>
+                            </div>
+                        </mat-tab>
+                    </mat-tab-group>
+                </mat-tab>
+                <mat-tab label="Laptime Statistics">
+                    <mat-tab-group dynamicHeight (selectedTabChange)="tabChanged($event)">
+                        <mat-tab label="Overall">
+                            <div style="text-align: left;" *ngIf="!loadingTrackChart">
+                                <mat-form-field>
+                                    <mat-select [(ngModel)]="selectedTrack" (selectionChange)="selectedTrackChanged()">
+                                        <mat-option *ngFor="let t of getTracks(true)" [value]="t">{{ t }}</mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                            <div class="chart-container">
+                                <app-loader component="chart" [visible]="loadingTrackChart"></app-loader>
+                                <ngx-charts-line-chart *ngIf="!loadingTrackChart" [xAxisLabel]="'Lap'"
+                                    [results]="averageLapData" [xAxis]="true" [yAxis]="true" [showGridLines]="true"
+                                    [scheme]="colourScheme" [yAxisTickFormatting]="yAxisTickFormatting" [legend]="true"
+                                    [autoScale]="true">
+                                    <ng-template #tooltipTemplate let-model="model">
+                                        <h2 style="color: white; margin-bottom: 0;">{{ model.name }}</h2>
+                                        <h3>{{ model.series }} - {{ model.value | time }}</h3>
+                                    </ng-template>
+                                    <ng-template #seriesTooltipTemplate let-model="model">
+                                        <h2 style="color: white; margin-bottom: 0;">{{ model[0].name }}</h2>
+                                        <div *ngFor="let m of model">
+                                            <h3 style="margin-bottom: 0;">{{ m.series }}: {{ m.value | time }}</h3>
+                                        </div>
+                                    </ng-template>
+                                </ngx-charts-line-chart>
+                            </div>
+                        </mat-tab>
+                        <mat-tab label="Driver Fastest Laps">
+                            <div style="text-align: left;" *ngIf="!loadingTrackChart">
+                                <mat-form-field>
+                                    <mat-select multiple [(ngModel)]="selectedUser"
+                                        (selectionChange)="selectedUserChanged()">
+                                        <mat-option *ngFor="let t of getUsers()" [value]="t">{{ t }}</mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                            <div class="chart-container">
+                                <app-loader component="chart" [visible]="loadingTrackChart"></app-loader>
+                                <ngx-charts-line-chart *ngIf="!loadingTrackChart" [xAxisLabel]="'Lap'"
+                                    [results]="userLapData" [xAxis]="true" [yAxis]="true" [showGridLines]="true"
+                                    [scheme]="colourScheme" [yAxisTickFormatting]="yAxisTickFormatting" [legend]="true"
+                                    [autoScale]="true">
+                                    <ng-template #tooltipTemplate let-model="model">
+                                        <h2 style="color: white; margin-bottom: 0;">{{ model.name }}</h2>
+                                        <h3>{{ model.series }} - {{ model.value | time }}</h3>
+                                    </ng-template>
+                                    <ng-template #seriesTooltipTemplate let-model="model">
+                                        <h2 style="color: white; margin-bottom: 0;">{{ model[0].name }}</h2>
+                                        <div *ngFor="let m of model">
+                                            <h3 style="margin-bottom: 0;">{{ m.series }}: {{ m.value | time }}</h3>
+                                        </div>
+                                    </ng-template>
+                                </ngx-charts-line-chart>
+                            </div>
+                        </mat-tab>
+                    </mat-tab-group>
+                </mat-tab>
+                <mat-tab label="User Statistics">
+                    <table mat-table [dataSource]="userUploadMetrics">
+
+                        <ng-container matColumnDef="user">
+                            <th style="padding-left: 0px;" mat-header-cell *matHeaderCellDef>User</th>
+                            <td mat-cell *matCellDef="let element">{{ element.user }}</td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="favCar">
+                            <th style="padding-left: 0px;" mat-header-cell *matHeaderCellDef>Favourite Car</th>
+                            <td mat-cell *matCellDef="let element">{{ element.favouriteCar }}</td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="favTrack">
+                            <th style="padding-left: 0px;" mat-header-cell *matHeaderCellDef>Favourite Track</th>
+                            <td mat-cell *matCellDef="let element">{{ element.favouriteTrack }}</td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="filesUploaded">
+                            <th style="padding-left: 0px;" mat-header-cell *matHeaderCellDef>Number of Files Uploaded</th>
+                            <td mat-cell *matCellDef="let element">{{ element.numberOfUploads }}</td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="lapsUploaded">
+                            <th style="padding-left: 0px;" mat-header-cell *matHeaderCellDef>Number of Laps Uploaded</th>
+                            <td mat-cell *matCellDef="let element">{{ element.numberOfLaps }}</td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="fastestLaps">
+                            <th style="padding-left: 0px;" mat-header-cell *matHeaderCellDef>Number of Fastest Laps</th>
+                            <td mat-cell *matCellDef="let element">{{ element.numberOfFastestLaps }}</td>
+                        </ng-container>
+
+                        <tr mat-header-row *matHeaderRowDef="['user', 'favCar', 'favTrack', 'filesUploaded', 'lapsUploaded', 'fastestLaps']; sticky: true"></tr>
+                        <tr mat-row *matRowDef="let row; columns: ['user', 'favCar', 'favTrack', 'filesUploaded', 'lapsUploaded', 'fastestLaps'];"></tr>
+                    </table>
+                </mat-tab>
+            </mat-tab-group>
         </div>
     </div>
 </div>

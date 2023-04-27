@@ -11,7 +11,7 @@ body {
 }
 
 .container {
-    margin: 2rem;
+    margin: 0.5rem 2rem;
 }
 
 .container-sm {
@@ -23,28 +23,25 @@ table {
 }
 
 a {
-    padding: 0.6rem;
     margin: 5px;
-    border: 1px solid #10152C;
     text-decoration: none;
     text-transform: uppercase;
-    display: inline-block;
-    border-radius: 8px;
     text-align: center;
-    color: #F6F7EC;
-    background-color: #3F599F;
+    color: black;
+    font: 400 16px/16px 'Kanit';
 }
 
 .disabled {
-    opacity: 50%;
+    opacity: 30%;
 }
 
 a:hover:not(.disabled) {
-    color: #F6F7EC;
-    background-color: #10152C;
-    -webkit-box-shadow: 4px 4px 10px 0px rgba(0,0,0,0.5); 
-    box-shadow: 4px 4px 10px 0px rgba(0,0,0,0.5);
     cursor: pointer;
+    color: #DA4D1A;
+}
+
+.mat-tab-label:hover:not(.disabled) {
+    color: #DA4D1A;
 }
 
 .ngx-charts .refline-label{
@@ -58,4 +55,12 @@ a:hover:not(.disabled) {
 
 .clickable {
     cursor: pointer;
+}
+
+.faster {
+	color: green;
+}
+
+.slower {
+	color: #DA4D1A;
 }

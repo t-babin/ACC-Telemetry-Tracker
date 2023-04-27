@@ -38,8 +38,7 @@ export class AuthenticationService {
     authorizedCallback(): void {
         const match = document.cookie.match(new RegExp('(^| )user=([^;]+)'));
         if (!match) {
-            this.isAuthorized = false;
-            this.router.navigate(['/unauthorized']);
+            this.authorize();
         } else {
             const user = JSON.parse(decodeURIComponent(match![2]));
             this.userSubject.next(new User(user));

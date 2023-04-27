@@ -27,12 +27,13 @@ public class MotecController : ControllerBase
     private readonly AccTelemetryTrackerContext _context;
     private readonly IMapper _mapper;
     private readonly IConfiguration _config;
-    private readonly IParserLogic _parser;
+    private readonly IMotecParser _parser;
     private readonly IAuditRepository _auditRepo;
     private readonly IDiscordNotifier _discordNotifier;
-    private readonly string _storagePage;
+    private readonly string _storagePath;
+    private readonly string _frontendUrl;
 
-    public MotecController(ILogger<MotecController> logger, AccTelemetryTrackerContext context, IMapper mapper, IConfiguration config, IParserLogic parser,
+    public MotecController(ILogger<MotecController> logger, AccTelemetryTrackerContext context, IMapper mapper, IConfiguration config, IMotecParser parser,
         IAuditRepository auditRepo, IDiscordNotifier discordNotifier)
     {
         _logger = logger;
@@ -42,7 +43,8 @@ public class MotecController : ControllerBase
         _parser = parser;
         _auditRepo = auditRepo;
         _discordNotifier = discordNotifier;
-        _storagePage = string.IsNullOrEmpty(_config.GetValue<string>("STORAGE_PATH")) ? "files" : _config.GetValue<string>("STORAGE_PATH");
+        _storagePath = string.IsNullOrEmpty(_config.GetValue<string>("STORAGE_PATH")) ? "files" : _config.GetValue<string>("STORAGE_PATH");
+        _frontendUrl = config.GetValue<string>("FRONTEND_URL");
     }
 
     /// <summary>
@@ -57,7 +59,8 @@ public class MotecController : ControllerBase
     [HttpGet(Name = "GetAll")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult> GetAll([FromQuery] IEnumerable<int>? carIds, [FromQuery] IEnumerable<int>? trackIds,
-        [FromQuery] IEnumerable<long>? userIds, [FromQuery] int? take, [FromQuery] int? skip, [FromQuery] string? sortOn)
+        [FromQuery] IEnumerable<long>? userIds, [FromQuery] int? take, [FromQuery] int? skip, [FromQuery] string? sortOn,
+        [FromQuery] int? includeId)
     {
         var userCookie = HttpContext.Request.Cookies.FirstOrDefault(c => c.Key.Equals("user"));
         if (!long.TryParse(JsonDocument.Parse(userCookie.Value).RootElement.GetProperty("Id").GetString(), out var userId))
@@ -130,7 +133,34 @@ public class MotecController : ControllerBase
                 .ToListAsync();
         }
 
-        return Ok(_mapper.Map<IEnumerable<MotecFileDto>>(motecFiles));
+        var mappedFiles = _mapper.Map<List<MotecFileDto>>(motecFiles);
+        if (includeId.HasValue)
+        {
+            _logger.LogInformation($"Trying to include the additional item [{includeId.Value}]");
+            var item = mappedFiles.FirstOrDefault(m => m.Id == includeId.Value);
+            if (item != null)
+            {
+                _logger.LogInformation($"[{includeId.Value}] already in the list. Bringing to the front");
+                mappedFiles.Remove(item);
+                mappedFiles.Insert(0, item);
+            }
+            else
+            {
+                var includedItem = await _context.MotecFiles
+                    .AsNoTracking()
+                    .Include(m => m.Car)
+                    .Include(m => m.Track)
+                    .Include(m => m.User)
+                    .FirstOrDefaultAsync(m => m.Id == includeId.Value);
+                if (includedItem != null)
+                {
+                    _logger.LogInformation($"[{includeId.Value}] not in the list. Fetched and bringing to the front");
+                    mappedFiles.Insert(0, _mapper.Map<MotecFileDto>(includedItem));
+                }
+            }
+        }
+
+        return Ok(mappedFiles);
     }
 
     /// <summary>
@@ -222,8 +252,8 @@ public class MotecController : ControllerBase
             {
                 _logger.LogInformation($"Got file [{System.Web.HttpUtility.HtmlEncode(Path.GetFileName(contentDisposition.FileName.Value))}]");
                 var fileName = Path.GetRandomFileName();
-                var savePath = Path.Combine(_storagePage, $"{fileName}.zip");
-                var tempDir = Directory.CreateDirectory(Path.Combine(_storagePage, $"TEMP-{fileName}"));
+                var savePath = Path.Combine(_storagePath, $"{fileName}.zip");
+                var tempDir = Directory.CreateDirectory(Path.Combine(_storagePath, $"TEMP-{fileName}"));
 
                 try
                 {
@@ -242,73 +272,27 @@ public class MotecController : ControllerBase
                     _logger.LogInformation($"Saved the temp file [{savePath}] and created the temp archive directory [{tempDir}]");
 
                     ZipFile.ExtractToDirectory(savePath, tempDir.FullName);
-                    var motecFile = await _parser.ParseFilesAsync(Directory.GetFiles(tempDir.FullName));
+                    var motecFile = await _parser.ParseMotecFileAsync(Directory.GetFiles(tempDir.FullName), fileName, user.Id);
 
                     if (motecFile == null)
                     {
                         return BadRequest(new { Message = "Error parsing the MoTeC files" });
                     }
 
-                    var existingMotec = await _context.MotecFiles
-                        .Include(m => m.Car)
-                        .Include(m => m.Track)
-                        .FirstOrDefaultAsync(m => m.SessionDate.Equals(motecFile.Date) && m.Car.Name.Equals(motecFile.Car) && m.Track.Name.Equals(motecFile.Track));
+                    await _auditRepo.PostAuditEvent(EventType.UploadFile, userId, $"Uploaded file [{motecFile.Id}][{motecFile.FileLocation}]", motecFile.Id);
 
-                    if (existingMotec != null)
-                    {
-                        _logger.LogInformation($"Motec file [{existingMotec.Id}] already exists. Deleting the file [{savePath}]");
-                        System.IO.File.Delete(savePath);
-                        return BadRequest(new { Message = "This motec file has already been uploaded" });
-                    }
-
-                    var car = await _context.Cars.FirstOrDefaultAsync(c => c.Name.Equals(motecFile.Car));
-                    var track = await _context.Tracks.FirstOrDefaultAsync(t => t.Name.Equals(motecFile.Track));
-                    if (car == null)
-                    {
-                        car = new Car { Name = motecFile.Car, Class = motecFile.CarClass };
-                        _logger.LogInformation($"Creating new car [{car.Name}][{car.Class}]");
-                        _context.Cars.Add(car);
-                        await _context.SaveChangesAsync();
-                    }
-                    if (track == null)
-                    {
-                        track = new Track { Name = motecFile.Track };
-                        _logger.LogInformation($"Creating new track [{track.Name}]");
-                        _context.Tracks.Add(track);
-                        await _context.SaveChangesAsync();
-                    }
-
-                    var dbMotecFile = new Datastore.Models.MotecFile
-                    {
-                        TrackId = track.Id,
-                        CarId = car.Id,
-                        DateInserted = DateTime.Now,
-                        NumberOfLaps = motecFile.Laps.Count(),
-                        FileLocation = $"{fileName}.zip",
-                        FastestLap = motecFile.Laps.Min(l => l.LapTime),
-                        SessionDate = motecFile.Date,
-                        UserId = userId,
-                        GameVersion = motecFile.GameVersion
-                    };
-                    _context.MotecFiles.Add(dbMotecFile);
-
-                    await _context.SaveChangesAsync();
-
-                    if (await _context.MotecFiles.AnyAsync(m => string.IsNullOrEmpty(m.GameVersion)))
-                    {
-                        var withoutVersion = await _context.MotecFiles.Where(m => string.IsNullOrEmpty(m.GameVersion)).ToListAsync();
-                        _logger.LogInformation($"Found [{withoutVersion.Count}] files without a game version set. Setting");
-                        _parser.GetGameVersion(withoutVersion);
-                        await _context.SaveChangesAsync();
-                    }
-
-                    await _auditRepo.PostAuditEvent(EventType.UploadFile, userId, $"Uploaded file [{dbMotecFile.Id}][{dbMotecFile.FileLocation}]", dbMotecFile.Id);
-
-                    return Ok(_mapper.Map<MotecFileDto>(dbMotecFile));
+                    return Ok(_mapper.Map<MotecFileDto>(motecFile));
                 }
                 catch (IOException ex)
                 {
                     _logger.LogError(ex, ex.Message);
+                    return BadRequest(new { Message = $"Error uploading file [{System.Web.HttpUtility.HtmlEncode(Path.GetFileName(contentDisposition.FileName.Value))}]: {ex.Message}" });
+                }
+                catch (MotecFileExistsException ex)
+                {
+                    _logger.LogError(ex, ex.Message);
+                    _logger.LogInformation($"Deleting the uploaded file [{savePath}]");
+                    System.IO.File.Delete(savePath);
                     return BadRequest(new { Message = $"Error uploading file [{System.Web.HttpUtility.HtmlEncode(Path.GetFileName(contentDisposition.FileName.Value))}]: {ex.Message}" });
                 }
                 catch (MotecParseException ex)
@@ -414,18 +398,22 @@ public class MotecController : ControllerBase
             return NotFound();
         }
 
-        if (!System.IO.File.Exists(Path.Combine(_storagePage, motecFromDb.FileLocation)))
+        if (!System.IO.File.Exists(Path.Combine(_storagePath, motecFromDb.FileLocation)))
         {
             _logger.LogError($"The motec file [{motecFromDb.FileLocation}] could not be found on disk");
             return NotFound(new { Message = "The motec file could not be opened" });
         }
 
-        var tempDir = Directory.CreateDirectory(Path.Combine(_storagePage, $"TEMP-{Path.GetFileNameWithoutExtension(motecFromDb.FileLocation)}"));
+        var tempDir = Directory.CreateDirectory(Path.Combine(_storagePath, $"TEMP-{Path.GetFileNameWithoutExtension(motecFromDb.FileLocation)}"));
         try
         {
-            ZipFile.ExtractToDirectory(Path.Combine(_storagePage, motecFromDb.FileLocation), tempDir.FullName);
-            var motecFile = await _parser.ParseFilesAsync(Directory.GetFiles(tempDir.FullName));
-            var mapped = _mapper.Map<MotecLapDto>(motecFile);
+            ZipFile.ExtractToDirectory(Path.Combine(_storagePath, motecFromDb.FileLocation), tempDir.FullName);
+            var motecLaps = _parser.ParseLaps(Directory.GetFiles(tempDir.FullName))
+                .Where(l => l.LapTime > motecFromDb.Track.MinLapTime && l.LapTime <= motecFromDb.Track.MaxLapTime);
+            var mapped = new MotecLapDto
+            {
+                Laps = motecLaps
+            };
 
             var comboAverage = await _context.AverageLaps
                 .AsNoTracking()
@@ -501,7 +489,7 @@ public class MotecController : ControllerBase
             return NotFound();
         }
 
-        if (!System.IO.File.Exists(Path.Combine(_storagePage, motecFromDb.FileLocation)))
+        if (!System.IO.File.Exists(Path.Combine(_storagePath, motecFromDb.FileLocation)))
         {
             _logger.LogError($"The motec file [{motecFromDb.FileLocation}] could not be found on disk");
             return NotFound("The motec files could not be found on disk");
@@ -509,7 +497,7 @@ public class MotecController : ControllerBase
 
         await _auditRepo.PostAuditEvent(EventType.DownloadFile, userValidation.User!.Id, $"Downloaded file [{motecFromDb.Id}][{motecFromDb.FileLocation}]", motecFromDb.Id);
 
-        return new PhysicalFileResult(Path.GetFullPath(Path.Combine(_storagePage, motecFromDb.FileLocation)), "application/x-zip-compressed");
+        return new PhysicalFileResult(Path.GetFullPath(Path.Combine(_storagePath, motecFromDb.FileLocation)), "application/x-zip-compressed");
     }
 
     /// <summary>
@@ -536,12 +524,6 @@ public class MotecController : ControllerBase
             return userValidation.Result;
         }
 
-        if (!userValidation.User!.Role.Equals("admin"))
-        {
-            _logger.LogError($"User with ID [{userValidation.User!.Id.ToString()}] is not an admin");
-            return Unauthorized();
-        }
-
         var motecFromDb = await _context.MotecFiles
             .AsNoTracking()
             .FirstOrDefaultAsync(m => m.Id == id);
@@ -552,12 +534,18 @@ public class MotecController : ControllerBase
             return NotFound();
         }
 
+        if (motecFromDb.UserId != userValidation.User!.Id && !userValidation.User!.Role.Equals("admin"))
+        {
+            _logger.LogError($"User with ID [{userValidation.User!.Id.ToString()}] is not an admin");
+            return Unauthorized();
+        }
+
         _context.MotecFiles.Remove(motecFromDb);
         if (_context.ChangeTracker.HasChanges())
         {
             await _context.SaveChangesAsync();
         }
-        var location = Path.Combine(_storagePage, motecFromDb.FileLocation);
+        var location = Path.Combine(_storagePath, motecFromDb.FileLocation);
         if (System.IO.File.Exists(location))
         {
             _logger.LogInformation($"Deleting file [{location}]");
@@ -616,8 +604,71 @@ public class MotecController : ControllerBase
         return Ok(data);
     }
 
+    [HttpGet("stats/user/metrics")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult> GetMotecUserUploadMetrics()
+    {
+        var userMetrics = await _context.MotecFiles
+            .AsNoTracking()
+            .Include(m => m.User)
+            .GroupBy(g => new { User = g.User.ServerName, UserId = g.UserId })
+            .Select(g => new UserMetricDto { User = g.Key.User, UserId = g.Key.UserId, NumberOfUploads = g.Count() })
+            .OrderBy(u => u.User)
+            .ToListAsync();
+
+        var fastestLaps = await _context.MotecFiles
+            .Where(m => m.TrackCondition != null)
+            .GroupBy(m => new { m.TrackId, m.TrackCondition })
+            .Select(m => new
+            {
+                TrackId = m.Key.TrackId,
+                FastestLap = m.Min(x => x.FastestLap),
+                TrackCondition = m.Key.TrackCondition.ToString()
+            })
+            .ToListAsync();
+
+        foreach (var user in userMetrics)
+        {
+            user.FavouriteCar = (await _context.MotecFiles
+                .AsNoTracking()
+                .Include(m => m.Car)
+                .Where(d => d.UserId == user.UserId)
+                .GroupBy(g => new { UserId = g.UserId, Car = g.Car.Name, CarId = g.CarId })
+                .Select(g => new { UserId = g.Key.UserId, Car = g.Key.Car, CarId = g.Key.CarId, Count = g.Count() })
+                .OrderByDescending(d => d.Count).FirstAsync()).Car;
+
+            user.FavouriteTrack = (await _context.MotecFiles
+                .AsNoTracking()
+                .Include(m => m.Track)
+                .Where(d => d.UserId == user.UserId)
+                .GroupBy(g => new { UserId = g.UserId, Track = g.Track.Name, CarId = g.CarId })
+                .Select(g => new { UserId = g.Key.UserId, Track = g.Key.Track, CarId = g.Key.CarId, Count = g.Count() })
+                .OrderByDescending(d => d.Count).FirstAsync()).Track;
+            
+            user.NumberOfLaps = await _context.MotecFiles
+                .AsNoTracking()
+                .Where(m => m.UserId == user.UserId)
+                .SumAsync(s => s.NumberOfLaps);
+            
+            var userFastestLaps = await _context.MotecFiles
+                .Where(m => m.TrackCondition != null && m.UserId == user.UserId)
+                .GroupBy(m => new { m.TrackId, m.TrackCondition })
+                .Select(m => new
+                {
+                    TrackId = m.Key.TrackId,
+                    FastestLap = m.Min(x => x.FastestLap),
+                    TrackCondition = m.Key.TrackCondition.ToString()
+                })
+                .ToListAsync();
+            
+            user.NumberOfFastestLaps = userFastestLaps.Intersect(fastestLaps).Count();
+        }
+
+        return Ok(userMetrics.OrderByDescending(u => u.NumberOfFastestLaps).ThenByDescending(u => u.NumberOfUploads).ThenBy(u => u.User));
+    }
+
     /// <summary>
-    /// Returns a collection containing the user for each motec file. Used for a chart.
+    /// Returns a collection containing the car, track, and user for each motec file. Used for a chart.
     /// </summary>
     /// <returns></returns>
     [HttpGet("stats/users")]
@@ -639,7 +690,7 @@ public class MotecController : ControllerBase
     }
 
     /// <summary>
-    /// Returns a collection containing the user for each motec file. Used for a chart.
+    /// Returns a collection containing the car, track, user, track condition, and fastest lap time in that condition for each motec file. Used for a chart.
     /// </summary>
     /// <returns></returns>
     [HttpGet("stats/users/laptimes")]
@@ -663,7 +714,7 @@ public class MotecController : ControllerBase
     }
 
     /// <summary>
-    /// Gets the average and fastest lap stats for each track and car
+    /// Gets the average and fastest lap stats for each track, car, and track condition
     /// </summary>
     /// <returns></returns>
     [HttpGet("stats/laps")]
@@ -689,7 +740,7 @@ public class MotecController : ControllerBase
                     FastestLap = motec.FastestLap
                 }
             )
-            .GroupBy(m => new { m.CarName, m.CarId, m.TrackName, m.TrackId, m.TrackCondition})
+            .GroupBy(m => new { m.CarName, m.CarId, m.TrackName, m.TrackId, m.TrackCondition })
             .Select(m => new MotecStatDto
             {
                 FastestLap = m.Min(x => x.FastestLap),
@@ -842,7 +893,11 @@ public class MotecController : ControllerBase
                 && m.TrackCondition == motecFromDb.TrackCondition
                 && m.FastestLap < motecFromDb.FastestLap);
         
-        await _discordNotifier.Notify(motecFromDb, JsonDocument.Parse(userCookie.Value).RootElement.GetProperty("Avatar").GetString(), anyFasterLaps);
+        await _discordNotifier.Notify(
+            motecFromDb,
+            JsonDocument.Parse(userCookie.Value).RootElement.GetProperty("Avatar").GetString(),
+            anyFasterLaps,
+            $"{_frontendUrl}/dashboard/{motecFromDb.Id}");
 
         return Ok();
     }

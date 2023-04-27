@@ -3,7 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { MatTabChangeEvent } from '@angular/material/tabs';
 import { forkJoin } from 'rxjs';
 import { TimePipe } from '../time.pipe';
-import { MotecLapStat, MotecStat } from '../_models/motecFile';
+import { MotecLapStat, MotecStat, UserMetric } from '../_models/motecFile';
 import { ApiService } from '../_services/api.service';
 import { AuthenticationService } from '../_services/authentication.service';
 
@@ -47,6 +47,7 @@ export class ReportsComponent implements OnInit {
   userMetrics: SeriesData[] = [];
   averageLapData: MultiSeries[] = [];
   userLapData: MultiSeries[] = [];
+  userUploadMetrics: UserMetric[] = [];
   selectedTrackIndex = 0;
   selectedTrack: string = '';
   selectedUser: string[] = [];
@@ -64,6 +65,7 @@ export class ReportsComponent implements OnInit {
   constructor(private apiService: ApiService, private timePipe: TimePipe, private authService: AuthenticationService) { }
 
   ngOnInit(): void {
+    this.getChartData();
   }
 
   getChartData(): void {
@@ -76,6 +78,7 @@ export class ReportsComponent implements OnInit {
     this.trackMetrics = [];
     this.carMetrics = [];
     this.userMetrics = [];
+    this.userUploadMetrics = [];
     this.includeCars = false;
     this.includeTracks = false;
     this.includeUserCars = false;
@@ -84,13 +87,15 @@ export class ReportsComponent implements OnInit {
       counts: this.apiService.getMotecStats(),
       lapStats: this.apiService.getMotecLapStats(),
       userStats: this.apiService.getMotecUserStats(),
-      userLapStats: this.apiService.getUserLapStats()
+      userLapStats: this.apiService.getUserLapStats(),
+      userUploadMetrics: this.apiService.getUserMetrics()
     }).subscribe({
       next: (res) => {
         this.counts = res.counts;
         this.lapStats = res.lapStats;
         this.userLapStats = res.userLapStats;
         this.selectedTrack = res.counts[0].track;
+        this.userUploadMetrics = res.userUploadMetrics;
         this.counts.forEach(s => {
           // load the car metrics
           if (this.carMetrics.filter(c => c.name === s.car).length > 0) {
@@ -174,6 +179,15 @@ export class ReportsComponent implements OnInit {
           }
         });
 
+        this.trackMetrics = this.trackMetrics.sort((a, b) => b.value - a.value);
+        this.carMetrics = this.carMetrics.sort((a, b) => b.value - a.value);
+        this.userMetrics = this.userMetrics.sort((a, b) => b.value - a.value);
+
+        this.trackCarMetricsStacked = this.trackCarMetricsStacked.sort((a, b) => b.series.map(x => x.value).reduce((sum, x) => sum + x, 0) - a.series.map(x => x.value).reduce((sum, x) => sum + x, 0));
+        this.carTrackMetricsStacked = this.carTrackMetricsStacked.sort((a, b) => b.series.map(x => x.value).reduce((sum, x) => sum + x, 0) - a.series.map(x => x.value).reduce((sum, x) => sum + x, 0));
+        this.userCarMetricsStacked = this.userCarMetricsStacked.sort((a, b) => b.series.map(x => x.value).reduce((sum, x) => sum + x, 0) - a.series.map(x => x.value).reduce((sum, x) => sum + x, 0));
+        this.userTrackMetricsStacked = this.userTrackMetricsStacked.sort((a, b) => b.series.map(x => x.value).reduce((sum, x) => sum + x, 0) - a.series.map(x => x.value).reduce((sum, x) => sum + x, 0));
+
         this.loadingStats = false;
         this.loadingBreakdownChart = false;
       }
@@ -194,7 +208,6 @@ export class ReportsComponent implements OnInit {
     if (!this.metricsMinimized) {
       setTimeout(() => {
         this.loadingBreakdownChart = false;
-        document.getElementById('scroll')!.scrollIntoView({ behavior: 'smooth' });
       }, 500);
     }
   }
@@ -202,6 +215,7 @@ export class ReportsComponent implements OnInit {
   tabChanged(event: MatTabChangeEvent): void {
     this.selectedTrack = this.getTracks(true)[0];
     this.selectedUser = [this.authService.userValue!.username]
+    console.log(this.authService.userValue);
     if (event.tab.textLabel === 'Laptime Statistics' || event.tab.textLabel === 'Overall') {
       this.selectedTrackChanged();
     } else if (event.tab.textLabel === 'Driver Fastest Laps') {
@@ -248,7 +262,6 @@ export class ReportsComponent implements OnInit {
     });
     setTimeout(() => {
       this.loadingTrackChart = false;
-      document.getElementById('scroll')!.scrollIntoView({ behavior: 'smooth' });
     }, 500);
   }
 
@@ -269,7 +282,6 @@ export class ReportsComponent implements OnInit {
     });
     setTimeout(() => {
       this.loadingTrackChart = false;
-      document.getElementById('scroll')!.scrollIntoView({ behavior: 'smooth' });
     }, 500);
   }
 }

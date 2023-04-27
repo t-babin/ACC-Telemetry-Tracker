@@ -22,6 +22,8 @@ public class AccTelemetryTrackerContext : DbContext
 
     public DbSet<Audit> AuditLog { get; set; }
 
+    public DbSet<GameVersion> GameVersions { get; set; }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         builder.Entity<Car>()
@@ -29,6 +31,10 @@ public class AccTelemetryTrackerContext : DbContext
 
         builder.Entity<Car>()
             .HasKey(c => c.Id);
+
+        builder.Entity<Car>()
+            .Property(c => c.Class)
+            .HasConversion<string>();
 
         builder.Entity<Track>()
             .ToTable("Tracks");
@@ -94,6 +100,12 @@ public class AccTelemetryTrackerContext : DbContext
             .HasOne(a => a.MotecFile)
             .WithMany(m => m.AuditEvents)
             .HasForeignKey(a => a.MotecId);
+
+        builder.Entity<GameVersion>()
+            .ToTable("GameVersions");
+        
+        builder.Entity<GameVersion>()
+            .HasKey(g => g.Id);
     }
 }
 

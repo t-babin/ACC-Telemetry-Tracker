@@ -24,13 +24,19 @@ namespace AccTelemetryTracker.Api.Controllers
         }
 
         [HttpGet(Name = "AllAuditLogs")]
-        public async Task<ActionResult> GetAuditLogs()
+        public async Task<ActionResult> GetAuditLogs([FromQuery] int? take, [FromQuery] int? skip)
         {
-            return Ok(_mapper.Map<IEnumerable<AuditDto>>(await _context.AuditLog
-                .AsNoTracking()
-                .Include(a => a.User)
-                .OrderByDescending(a => a.EventDate)
-                .ToListAsync()));
+            return Ok(new AuditLogDto
+            {
+                AuditEvents = _mapper.Map<IEnumerable<AuditDto>>(await _context.AuditLog
+                    .AsNoTracking()
+                    .Include(a => a.User)
+                    .OrderByDescending(a => a.EventDate)
+                    .Skip(skip.HasValue ? skip.Value : 0)
+                    .Take(take.HasValue ? take.Value : 10)
+                    .ToListAsync()),
+                AuditCount = await _context.AuditLog.AsNoTracking().CountAsync()
+            });
         }
     }
 }

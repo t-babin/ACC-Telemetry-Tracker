@@ -20,3 +20,20 @@ public class MotecStatDto
     
     public double AverageFastestLap { get; set; }
 }
+
+public class UserMetricDto
+{
+    public string? User { get; set; }
+
+    public long UserId { get; set; }
+
+    public string? FavouriteCar { get; set; }
+
+    public string? FavouriteTrack { get; set; }
+
+    public int NumberOfFastestLaps { get; set; }
+
+    public int NumberOfLaps { get; set; }
+
+    public int NumberOfUploads { get; set; }
+}

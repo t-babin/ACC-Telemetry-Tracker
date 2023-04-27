@@ -8,6 +8,8 @@ public interface IMotecParser
     /// <returns>A collection of laps</returns>
     IEnumerable<MotecLap> ParseLaps(string? path);
 
+    IEnumerable<MotecLap> ParseLaps(IEnumerable<string> files);
+
     /// <summary>
     /// Checks if the supplied path contains a valid .ldx MoTeC file
     /// </summary>
@@ -18,7 +20,9 @@ public interface IMotecParser
     /// <summary>
     /// Parses a .ld MoTeC file and returns an object with certain properties
     /// </summary>
-    /// <param name="path">The full path of the .ld file being parsed</param>
+    /// <param name="files">The file collection (.ld and .ldx) being parsed</param>
+    /// <param name="fileName">The file name to save the entry to the database with</param>
+    /// <param name="userId">The user ID that uploaded the file</param>
     /// <returns>A Task containing the MotecFile object</returns>
-    Task<MotecFile> ParseMotecFileAsync(string? path);
+    Task<Datastore.Models.MotecFile> ParseMotecFileAsync(IEnumerable<string> files, string fileName, long userId);
 }

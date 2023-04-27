@@ -16,7 +16,7 @@ public class DiscordNotifier : IDiscordNotifier
     }
 
     /// <inheritdoc />
-    public async Task Notify(Datastore.Models.MotecFile motecFile, string? avatarUrl, bool anyFasterLaps)
+    public async Task Notify(Datastore.Models.MotecFile motecFile, string? avatarUrl, bool anyFasterLaps, string? uploadUrl)
     {
         var hookUrl = _config.GetValue<string>("DISCORD_WEBHOOK_URL");
         if (string.IsNullOrEmpty(hookUrl))
@@ -72,17 +72,22 @@ public class DiscordNotifier : IDiscordNotifier
             var postObject = new
             {
                 username = "ACC Telemetry Tracker",
-                embeds = new object[] {
-                        new {
-                            author = new {
-                                name = $"{motecFile.User.ServerName} has uploaded a MoTeC file.",
-                                icon_url = string.IsNullOrEmpty(avatarUrl) ? "" : $"https://cdn.discordapp.com/avatars/{motecFile.UserId}/{avatarUrl}.png"
-                            },
-                            color = 4151711,
-                            fields = fields,
-                            title = anyFasterLaps ? "" : "New fastest lap!"
-                        }
+                embeds = new object[]
+                {
+                    new
+                    {
+                        author = new
+                        {
+                            name = $"{motecFile.User.ServerName} has uploaded a MoTeC file.",
+                            icon_url = string.IsNullOrEmpty(avatarUrl) ? "" : $"https://cdn.discordapp.com/avatars/{motecFile.UserId}/{avatarUrl}.png"
+                        },
+                        color = 4151711,
+                        fields = fields,
+                        description = anyFasterLaps ? "" : "**New fastest lap!**",
+                        title = "Check it out!",
+                        url = string.IsNullOrEmpty(uploadUrl) ? "" : uploadUrl
                     }
+                }
             };
             var postBody = JsonSerializer.Serialize(postObject);
             _logger.LogInformation($"Sending data to webhook: {{{postBody}}}");

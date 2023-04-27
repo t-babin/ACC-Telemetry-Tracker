@@ -2,11 +2,6 @@
     <app-loader [component]="'data'" [visible]="loadingFiles"></app-loader>
     <div fxLayout fxLayoutAlign="space-between start">
         <div fxLayout="column" fxLayoutAlign="space-between" *ngIf="!loadingFiles">
-            <a *ngIf="!processingUpload; else disabledReload" (click)="reload()">Reload Data</a>
-            <ng-template #disabledReload>
-                <a class="disabled">Reload Data</a>
-            </ng-template>
-
             <input type="file" style="display: none;" (change)="onFileSelected($event)"
                 accept="application/x-zip-compressed" #fileUpload>
             <div fxLayout="column" *ngIf="authService.userValue?.isValid; else disabledUser">
@@ -42,7 +37,7 @@
                 <a class="disabled" matTooltip="Uploading is disabled until you are activated.">Upload File</a>
             </ng-template>
 
-            <div fxLayout="column" style="margin-top: 1.5rem;">
+            <div fxLayout="column" style="margin-top: 0.5rem;">
                 <mat-form-field>
                     <mat-label>Filter for Car</mat-label>
                     <mat-select multiple [formControl]="selectedCars" (selectionChange)="onFilterChange($event)" [disabled]="processingUpload">
@@ -67,8 +62,8 @@
         </div>
         <div fxLayout="column" style="width: 85%; margin: 0 auto;">
 
-            <div fxLayout fxLayoutAlign="end">
-                <app-paginator [dataLength]="fileCount" [hidden]="motecFiles === null || motecFiles?.length === 0" (pageEvent)="page($event)" [pageSizes]="[20, 50, 100]" [pageSize]="pageSize"></app-paginator>
+            <div fxLayout fxLayoutAlign="end end">
+                <app-paginator [dataLength]="fileCount" [hidden]="loadingFiles || motecFiles === null || motecFiles?.length === 0" (pageEvent)="page($event)" [pageSizes]="[20, 50, 100]" [pageSize]="pageSize"></app-paginator>
             </div>
             <table mat-table [dataSource]="motecFiles" multiTemplateDataRows *ngIf="!loadingFiles">
 
@@ -84,7 +79,7 @@
 
                 <ng-container matColumnDef="track">
                     <th mat-header-cell *matHeaderCellDef>
-                        <div fxLayout fxLayoutAlign="center center">
+                        <div fxLayout fxLayoutAlign="start center">
                             <span class="sortable" (click)="sortData('track')">Track</span>
                             <mat-icon *ngIf="sortedOn === 'track'" class="sort-icon">{{ sortDirection === 'desc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
                         </div>
@@ -99,7 +94,7 @@
 
                 <ng-container matColumnDef="numLaps">
                     <th mat-header-cell *matHeaderCellDef>
-                        <div fxLayout fxLayoutAlign="center center">
+                        <div fxLayout fxLayoutAlign="start center">
                             <p>Valid Laps</p>
                             <mat-icon style="font-size: 14px; margin-top: 4px;" matTooltip="Only laps within a certain time range will be valid" [matTooltipPosition]="'above'">info</mat-icon>
                         </div>
@@ -107,10 +102,9 @@
                     <td mat-cell *matCellDef="let element">{{ element.numberOfLaps}}</td>
                 </ng-container>
 
-                <!-- TODO also show the delta to the average fastest here? -->
                 <ng-container matColumnDef="fastestLap">
                     <th mat-header-cell *matHeaderCellDef>
-                        <div fxLayout fxLayoutAlign="center center">
+                        <div fxLayout fxLayoutAlign="start center">
                             <span class="sortable" (click)="sortData('fastestLap')">Fastest Lap</span>
                             <mat-icon *ngIf="sortedOn === 'fastestLap'" class="sort-icon">{{ sortDirection === 'desc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
                         </div>
@@ -127,7 +121,7 @@
                     <th mat-header-cell *matHeaderCellDef>Conditions</th>
                     <td mat-cell *matCellDef="let element">
                         <div *ngIf="(element.username === authService.userValue?.username || authService.userValue?.role === 'admin') && element.editingConditions; else editConditions">
-                            <div fxLayout fxLayoutAlign="center center">
+                            <div fxLayout fxLayoutAlign="start center">
                                 <mat-select [(ngModel)]="element.changedTrackConditions" (selectionChange)="onConditionsChanged($event, element)">
                                     <mat-option [value]="'Green'">Green</mat-option>
                                     <mat-option [value]="'Fast'">Fast</mat-option>
@@ -145,7 +139,7 @@
                             </div>
                         </div>
                         <ng-template #editConditions>
-                            <div fxLayout fxLayoutAlign="center center">
+                            <div fxLayout fxLayoutAlign="start center">
                                 <p style="margin-right: 5px;">{{ element.trackConditions }}</p>
                                 <mat-icon *ngIf="element.username === authService.userValue?.username || authService.userValue?.role === 'admin'" 
                                     class="comment-update clickable"
@@ -157,7 +151,7 @@
 
                 <ng-container matColumnDef="dateLoaded">
                     <th mat-header-cell *matHeaderCellDef>
-                        <div fxLayout fxLayoutAlign="center center">
+                        <div fxLayout fxLayoutAlign="start center">
                             <span class="sortable" (click)="sortData('dateLoaded')">Date Added</span>
                             <mat-icon *ngIf="sortedOn === 'dateLoaded'" class="sort-icon">{{ sortDirection === 'desc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
                         </div>
@@ -167,13 +161,13 @@
 
                 <ng-container matColumnDef="comment">
                     <th mat-header-cell *matHeaderCellDef>
-                        <div fxLayout fxLayoutAlign="center center">
+                        <div fxLayout fxLayoutAlign="start center">
                             <p>Comment</p>
                             <mat-icon style="font-size: 14px; margin-top: 4px;" matTooltip="Optional info about the file, ex: fuel, weather, etc." [matTooltipPosition]="'above'">info</mat-icon>
                         </div>
                     </th>
                     <td mat-cell *matCellDef="let element">
-                        <div *ngIf="element.username === authService.userValue?.username && element.editingComment; else commentText">
+                        <div *ngIf="(element.username === authService.userValue?.username || authService.userValue?.role === 'admin') && element.editingComment; else commentText">
                             <mat-form-field class="example-full-width" appearance="outline">
                                 <textarea matInput maxlength="256" (input)="onCommentChanged($event, element)">{{ element.comment }}</textarea>
                                 <mat-hint align="end">{{ element.changedComment?.length ?? 0 }} / 256</mat-hint>
@@ -185,7 +179,7 @@
                             </ng-template>
                         </div>
                         <ng-template #commentText>
-                            <div fxLayout fxLayoutAlign="center center">
+                            <div fxLayout fxLayoutAlign="start center">
                                 {{ element.comment }}
                                 <mat-icon *ngIf="element.username === authService.userValue?.username || authService.userValue?.role === 'admin'" 
                                     class="comment-update clickable"
@@ -196,61 +190,77 @@
                 </ng-container>
 
                 <ng-container matColumnDef="showLaps">
-                    <th mat-header-cell *matHeaderCellDef>Laps</th>
+                    <th mat-header-cell *matHeaderCellDef></th>
                     <td mat-cell *matCellDef="let element">
-                        <mat-icon *ngIf="selectedFile !== element; else shown"
-                            style="cursor: pointer; transform: rotate(45deg);" (click)="showLaps(element)">close
-                        </mat-icon>
-                        <ng-template #shown>
-                            <mat-icon class="clickable" (click)="showLaps(element)">close</mat-icon>
-                        </ng-template>
+                        <div fxLayout fxLayoutAlign="center center">
+                            <mat-icon *ngIf="selectedFile !== element; else shown"
+                                style="cursor: pointer;" (click)="showLaps(element)" matTooltip="Show the laps from this file">expand_more
+                            </mat-icon>
+                            <ng-template #shown>
+                                <mat-icon class="clickable" (click)="showLaps(element)">close</mat-icon>
+                            </ng-template>
+                        </div>
                     </td>
                 </ng-container>
 
                 <ng-container matColumnDef="download">
                     <th mat-header-cell *matHeaderCellDef></th>
                     <td mat-cell *matCellDef="let element">
-                        <mat-icon class="clickable" (click)="downloadFile(element)" *ngIf="downloadId !== element.id; else loadingDownload">save</mat-icon>
-                        <ng-template #loadingDownload>
-                            <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-                        </ng-template>
+                        <div fxLayout fxLayoutAlign="center center">
+                            <mat-icon class="clickable" (click)="downloadFile(element)" *ngIf="downloadId !== element.id; else loadingDownload"
+                            matTooltip="Download this file.">download</mat-icon>
+                            <ng-template #loadingDownload>
+                                <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+                            </ng-template>
+                        </div>
                     </td>
                 </ng-container>
 
                 <ng-container matColumnDef="delete">
                     <th mat-header-cell *matHeaderCellDef></th>
                     <td mat-cell *matCellDef="let element">
-                        <mat-icon class="clickable" (click)="deleteFile(element)" *ngIf="deleteId !== element.id; else loadingDelete">delete</mat-icon>
-                        <ng-template #loadingDelete>
-                            <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-                        </ng-template>
+                        <div fxLayout fxLayoutAlign="center center">
+                            <mat-icon [ngClass]="element.username === authService.userValue?.username || authService.userValue?.role === 'admin' ? 'clickable' : 'disabled'"
+                                (click)="deleteFile(element)" *ngIf="(element.username === authService.userValue?.username || authService.userValue?.role === 'admin') && deleteId !== element.id; else loadingDelete"
+                                matTooltip="Delete this file.">delete</mat-icon>
+                            <ng-template #loadingDelete>
+                                <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+                            </ng-template>
+                        </div>
+                    </td>
+                </ng-container>
+
+                <ng-container matColumnDef="copy">
+                    <th mat-header-cell *matHeaderCellDef></th>
+                    <td mat-cell *matCellDef="let element">
+                        <div fxLayout fxLayoutAlign="center center">
+                            <mat-icon class="clickable" (click)="copyLink(element)" matTooltip="Copy the link to this file to your clipboard.">share</mat-icon>
+                        </div>
                     </td>
                 </ng-container>
 
                 <ng-container matColumnDef="expandedDetail">
-                    <td mat-cell *matCellDef="let element" [attr.colspan]="9">
+                    <td mat-cell *matCellDef="let element" [attr.colspan]="14">
                         <div class="example-element-detail" [@detailExpand]="element == selectedFile ? 'expanded' : 'collapsed'" fxLayout="column">
                             <app-loader style="margin: 1rem;" [component]="'laps'" [visible]="loadingLaps"></app-loader>
-                            <div fxLayout style="width: 100%; max-height: 460px;">
+                            <div fxLayout style="width: 100%; max-height: 470px;">
                                 <div style="overflow: auto; max-height: 450px; width: 20%; margin: 0px 1rem 1rem 1rem;" *ngIf="!loadingLaps">
                                     <table mat-table [dataSource]="laps" style="width: 94%; margin-left: 1%;">
 
                                         <ng-container matColumnDef="lapNumber">
-                                            <th mat-header-cell *matHeaderCellDef>Lap</th>
+                                            <th style="padding-left: 0px; text-align: center;" mat-header-cell *matHeaderCellDef>Lap</th>
                                             <td mat-cell *matCellDef="let element"
                                                 [ngClass]="fastest(element) ? 'fastest' : ''">{{ element.lapNumber + 1 }}</td>
                                         </ng-container>
 
                                         <ng-container matColumnDef="lapTime">
-                                            <th mat-header-cell *matHeaderCellDef>Lap Time</th>
+                                            <th style="padding-left: 0px; text-align: center;" mat-header-cell *matHeaderCellDef>Lap Time</th>
                                             <td mat-cell *matCellDef="let element"
                                                 [ngClass]="fastest(element) ? 'fastest' : ''">{{ element.lapTime | time }}</td>
                                         </ng-container>
 
-                                        <tr mat-header-row *matHeaderRowDef="['lapNumber', 'lapTime']; sticky: true">
-                                        </tr>
-                                        <tr mat-row *matRowDef="let row; columns: ['lapNumber', 'lapTime'];"
-                                            [ngClass]="fastest(row) ? 'fastest-row' : ''"></tr>
+                                        <tr mat-header-row *matHeaderRowDef="['lapNumber', 'lapTime']; sticky: true"></tr>
+                                        <tr style="text-align: center;" mat-row *matRowDef="let row; columns: ['lapNumber', 'lapTime'];" [ngClass]="fastest(row) ? 'fastest-row' : ''"></tr>
                                     </table>
                                 </div>
 
@@ -315,8 +325,8 @@
                                         [scheme]="colourScheme"
                                         [referenceLines]="referenceLines"
                                         [showRefLines]="true"
-                                        [yScaleMin]="fastestLap() * 0.99"
-                                        [yScaleMax]="slowestLap() * 1.02"
+                                        [yScaleMin]="fastestLap() * 0.98"
+                                        [yScaleMax]="slowestLap() * 1.01"
                                         [yAxisTickFormatting]="yAxisTickFormatting">
                                         <ng-template #tooltipTemplate let-model="model">
                                             <h2 style="color: white; margin-bottom: 0;">{{ model.name }}</h2>
@@ -366,9 +376,6 @@
                 <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="example-detail-row"
                     [ngClass]="selectedFile === row ? 'selected-row' : ''"></tr>
             </table>
-
-            <mat-divider [hidden]="loadingFiles"></mat-divider>
-            <app-reports [hidden]="loadingFiles" #reports></app-reports>
         </div>
     </div>
 </div>

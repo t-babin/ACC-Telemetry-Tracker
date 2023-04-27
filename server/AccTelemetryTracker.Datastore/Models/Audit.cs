@@ -26,5 +26,14 @@ public enum EventType
     ModifyUser,
     GetLaps,
     UpdateComment,
-    UpdateTrackCondition
+    UpdateTrackCondition,
+    NewGameVersion,
+    DeleteGameVersion,
+    UpdateGameVersion,
+    NewTrack,
+    UpdateTrack,
+    DeleteTrack,
+    NewCar,
+    UpdateCar,
+    DeleteCar
 }

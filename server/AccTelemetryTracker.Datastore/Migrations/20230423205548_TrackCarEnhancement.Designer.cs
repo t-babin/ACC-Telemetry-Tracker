@@ -3,6 +3,7 @@ using System;
 using AccTelemetryTracker.Datastore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AccTelemetryTracker.Datastore.Migrations
 {
     [DbContext(typeof(AccTelemetryTrackerContext))]
-    partial class AccTelemetryTrackerContextModelSnapshot : ModelSnapshot
+    [Migration("20230423205548_TrackCarEnhancement")]
+    partial class TrackCarEnhancement
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "6.0.1");
